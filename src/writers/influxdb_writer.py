@@ -37,7 +37,7 @@ class InfluxDBWriterManager(WriterManager):
         self.write_api = None
 
     def __enter__(self) -> 'InfluxDBWriterManager':
-        """ データ取得開始時にデータベースに接続 """
+        """ データ取得開始時に一度だけデータベースに接続 """
         self.client = self.config.get_client()
         self.write_api = self.client.write_api()
 

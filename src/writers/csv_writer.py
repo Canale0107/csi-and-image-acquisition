@@ -44,7 +44,7 @@ class CSVWriterManager(WriterManager):
     def get_writer(self) -> CSVWriter:
         """ CSVWriterインスタンスを返す """
         if self.file is None:
-            raise RuntimeError("CSVファイルがオープンされていません。")
+            raise RuntimeError("CSV file is not opened.")
         return CSVWriter(self.file)
 
     def __exit__(self, exc_type, exc_value, traceback) -> None:
