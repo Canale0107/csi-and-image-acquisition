@@ -91,7 +91,7 @@ class Image():
         # ディレクトリが存在しない場合は作成する
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
         cv2.imwrite(filepath, self.frame)
-        logger.info(f"Image saved: {filepath}")
+        logger.info("Image saved: %s", filepath)
 
 
 class CameraManager():
@@ -157,12 +157,10 @@ class CSVWriter(DataWriter):
 
     def write_data(self, data: dict) -> None:
         """ CSVにデータを書き込む """
-        # 元のデータを変えず、ローカル変数でタイムスタンプを変換
-        data_copy = data.copy()
-        if isinstance(data_copy.get('timestamp'), datetime):
-            data_copy['timestamp'] = data_copy['timestamp'].timestamp()
-        self.writer.writerow(data_copy)
-        logger.info("Data written to CSV: %s", data_copy)
+        if isinstance(data.get('timestamp'), datetime):
+            data['timestamp'] = data['timestamp'].timestamp()
+        self.writer.writerow(data)
+        logger.info("Data written to CSV: %s", data)
 
 
 class CSVManager(DataManager):
@@ -210,16 +208,13 @@ class InfluxDBWriter(DataWriter):
     def write_data(self, data: dict) -> None:
         """ InfluxDBにデータを書き込む """
 
-        # 元のデータを変えず、ローカル変数でタイムスタンプを変換
-        data_copy = data.copy()
+        assert isinstance(data.get('timestamp'), datetime), \
+            f"Expected timestamp to be datetime, but got {type(data.get('timestamp'))}"
 
-        assert isinstance(data_copy.get('timestamp'), datetime), \
-            f"Expected timestamp to be datetime, but got {type(data_copy.get('timestamp'))}"
-
-        point = Point("IMAGE_DATA").tag("session_id", data_copy["session_id"]) \
-                                    .tag("camera_index", data_copy["camera_index"]) \
-                                    .field("filepath", data_copy["filepath"]) \
-                                    .time(data_copy["timestamp"], WritePrecision.NS)
+        point = Point("IMAGE_DATA").tag("session_id", data["session_id"]) \
+                                    .tag("camera_index", data["camera_index"]) \
+                                    .field("filepath", data["filepath"]) \
+                                    .time(data["timestamp"], WritePrecision.NS)
         self.write_api.write(bucket=self.bucket, record=point)
         logger.info("Data written to DB: %s", point)
 
