@@ -9,7 +9,7 @@ from contextlib import ExitStack
 import cv2
 
 from src.config import DataAcquisitionConfig, CameraConfig, InfluxDBConfig
-from src.camera import CameraManager, Image, ImageMetaData
+from src.camera import CameraManager, FrameWithMetaData, MetaData
 from src.data_acquisition.file_manager import FilePathManager
 from src.writers import DataWriter, WriterManager, CSVManager, InfluxDBManager
 
@@ -28,28 +28,28 @@ class DataAcquisitionManager():
         self.data_managers = data_managers
         self.stop_event = stop_event
 
-    def capture_frame(self) -> Image:
-        """ フレームをキャプチャして Image オブジェクトを返す """
+    def capture_frame_with_meta_data(self) -> FrameWithMetaData:
+        """ フレームをキャプチャして FrameWithMetaData オブジェクトを返す """
         ret, frame = self.camera_manager.cap.read()
         if not ret:
             raise RuntimeError("Failed to capture frame from camera.")
         frame = cv2.flip(frame, 1)  # 画像の左右反転
         timestamp = datetime.now(timezone.utc)
         filepath = self.filepath_manager.get_filepath(timestamp)
-        meta_data = ImageMetaData(
+        meta_data = MetaData(
             session_id=self.session_id,
             camera_index=self.camera_manager.config.camera_index,
             timestamp=timestamp,
             filepath=filepath
         )
-        return Image(frame, meta_data)
+        return FrameWithMetaData(frame, meta_data)
 
-    def save_image(self, image: Image, writers: List[DataWriter]) -> None:
+    def save_and_write_frame(self, frame_with_meta_data: FrameWithMetaData, writers: List[DataWriter]) -> None:
         """ イメージを保存し、データを書き込む """
-        image.save(self.config.data_dirpath)
+        frame_with_meta_data.save(self.config.data_dirpath)
         for writer in writers:
             try:
-                writer.write_data(image.meta_data)
+                writer.write_data(frame_with_meta_data.meta_data)
             except Exception as e:
                 logger.error("Failed to write data: %s", e)
 
@@ -76,8 +76,8 @@ class DataAcquisitionManager():
             try:
                 while not self.stop_event.is_set():
                     try:
-                        image = self.capture_frame()  # フレームをキャプチャ
-                        self.save_image(image, writers)  # イメージを保存
+                        frame_with_meta_data = self.capture_frame_with_meta_data()  # フレームをキャプチャ
+                        self.save_and_write_frame(frame_with_meta_data, writers)  # イメージを保存
                         # 次のフレーム取得までの時間を計算し、必要ならスリープ
                         time.sleep(max(0, next_frame_time - time.time()))  # スリープ時間が負でないか確認
                         next_frame_time += sleep_time  # 次のフレーム取得時間を更新

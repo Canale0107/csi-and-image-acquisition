@@ -11,15 +11,15 @@ import cv2
 logger = logging.getLogger(__name__)
 
 
-class ImageMetaData(BaseModel):
+class MetaData(BaseModel):
     session_id: str
     camera_index: int
     timestamp: datetime
     filepath: Path
 
 
-class Image:
-    def __init__(self, frame: np.ndarray, meta_data: ImageMetaData) -> None:
+class FrameWithMetaData:
+    def __init__(self, frame: np.ndarray, meta_data: MetaData) -> None:
         self.frame = frame
         self.meta_data = meta_data
 

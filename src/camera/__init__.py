@@ -1,5 +1,5 @@
 from .camera_manager import CameraManager
-from .image import ImageMetaData, Image
+from .image import MetaData, FrameWithMetaData
 
 
-__all__ = ['CameraManager', 'ImageMetaData', 'Image']
+__all__ = ['CameraManager', 'MetaData', 'FrameWithMetaData']

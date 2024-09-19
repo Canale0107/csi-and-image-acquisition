@@ -4,7 +4,7 @@ import logging
 from influxdb_client import Point, WritePrecision
 
 from src.config import InfluxDBConfig
-from src.camera import ImageMetaData
+from src.camera import MetaData
 from src.writers import DataWriter, WriterManager
 
 logger = logging.getLogger(__name__)
@@ -15,7 +15,7 @@ class InfluxDBWriter(DataWriter):
         self.write_api = write_api
         self.bucket = bucket
 
-    def write_data(self, meta_data: ImageMetaData) -> None:
+    def write_data(self, meta_data: MetaData) -> None:
         """ InfluxDBにデータを書き込む """
 
         assert isinstance(meta_data.timestamp, datetime), \

@@ -4,7 +4,7 @@ import csv
 import logging
 from pathlib import Path
 
-from src.camera.image import ImageMetaData
+from src.camera.image import MetaData
 from src.writers import DataWriter, WriterManager
 
 
@@ -16,7 +16,7 @@ class CSVWriter(DataWriter):
         self.writer = csv.DictWriter(file, fieldnames=['session_id', 'camera_index', 'filepath', 'timestamp'])
         self.writer.writeheader()
 
-    def write_data(self, meta_data: ImageMetaData) -> None:
+    def write_data(self, meta_data: MetaData) -> None:
         """ CSVにデータを書き込む """
 
         meta_data = {

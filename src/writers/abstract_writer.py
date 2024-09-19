@@ -12,7 +12,7 @@ Classes:
 """
 
 from abc import ABC, abstractmethod
-from src.camera import ImageMetaData
+from src.camera import MetaData
 
 
 class DataWriter(ABC):
@@ -26,12 +26,12 @@ class DataWriter(ABC):
     """
 
     @abstractmethod
-    def write_data(self, meta_data: ImageMetaData) -> None:
+    def write_data(self, meta_data: MetaData) -> None:
         """
         Abstract method for writing image metadata to the appropriate storage.
 
         Parameters:
-        - meta_data (ImageMetaData): The metadata object containing session information, 
+        - meta_data (MetaData): The metadata object containing session information, 
                                      camera details, image path, and timestamp.
 
         This method must be implemented by any subclass to define how the metadata 
