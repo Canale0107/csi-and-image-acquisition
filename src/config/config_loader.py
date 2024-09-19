@@ -1,6 +1,7 @@
 import yaml
 from typing import Tuple
 import logging
+
 from pydantic import BaseModel, ValidationError
 from influxdb_client import InfluxDBClient
 
@@ -20,7 +21,7 @@ class CameraConfig(BaseModel):
     fps: int
 
 
-class DBConfig(BaseModel):
+class InfluxDBConfig(BaseModel):
     url: str
     token: str
     org: str
@@ -33,14 +34,14 @@ class DBConfig(BaseModel):
         return InfluxDBClient(url=self.url, token=self.token, org=self.org)
 
 
-def load_configs() -> Tuple[DataAcquisitionConfig, CameraConfig, DBConfig]:
+def load_configs() -> Tuple[DataAcquisitionConfig, CameraConfig, InfluxDBConfig]:
     try:
         with open("config.yml", "r", encoding='utf-8') as file:
             config = yaml.safe_load(file)
 
         data_acquisition_config = DataAcquisitionConfig.parse_obj(config['data_acquisition'])
         camera_configs = [CameraConfig.parse_obj(cam_config) for cam_config in config['camera']]
-        db_config = DBConfig.parse_obj(config['db'])
+        db_config = InfluxDBConfig.parse_obj(config['db'])
 
     except FileNotFoundError as e:
         logger.error("Configuration file not found: %s", e)

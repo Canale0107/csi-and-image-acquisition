@@ -4,7 +4,7 @@ import csv
 import logging
 
 from src.camera.image import ImageMetaData
-from .abstract_writer import DataWriter, DataManager
+from src.writers import DataWriter, DataManager
 
 
 logger = logging.getLogger(__name__)

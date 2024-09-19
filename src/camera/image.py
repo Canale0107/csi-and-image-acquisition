@@ -2,8 +2,8 @@ import os
 from datetime import datetime
 import logging
 from pathlib import Path
-from pydantic import BaseModel
 
+from pydantic import BaseModel
 import numpy as np
 import cv2
 

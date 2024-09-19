@@ -3,10 +3,9 @@ import logging
 
 from influxdb_client import Point, WritePrecision
 
-from src.config.config_loader import DBConfig
-from src.camera.image import ImageMetaData
-from .abstract_writer import DataWriter, DataManager
-
+from src.config import InfluxDBConfig
+from src.camera import ImageMetaData
+from src.writers import DataWriter, DataManager
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +31,7 @@ class InfluxDBWriter(DataWriter):
 
 
 class InfluxDBManager(DataManager):
-    def __init__(self, config: DBConfig, session_id: str) -> None:
+    def __init__(self, config: InfluxDBConfig, session_id: str) -> None:
         self.config = config
         self.session_id = session_id
         self.client = None

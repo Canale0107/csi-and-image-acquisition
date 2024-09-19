@@ -2,7 +2,7 @@
 
 ## 実行方法
 ```
-python3 image_acquisition.py
+python3 main.py
 ```
 
 ## ファイル構成

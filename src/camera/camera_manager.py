@@ -1,5 +1,5 @@
 import cv2
-from src.config.config_loader import CameraConfig
+from src.config import CameraConfig
 
 
 class CameraManager():

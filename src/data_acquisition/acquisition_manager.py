@@ -8,15 +8,14 @@ from contextlib import ExitStack
 
 import cv2
 
-from src.config.config_loader import DataAcquisitionConfig, CameraConfig, DBConfig
-from src.camera.camera_manager import CameraManager
-from src.camera.image import Image, ImageMetaData
-from .file_manager import FilePathManager
-from src.writers.abstract_writer import DataManager
-from src.writers.csv_writer import CSVManager
-from src.writers.influxdb_writer import InfluxDBManager
+from src.config import DataAcquisitionConfig, CameraConfig, InfluxDBConfig
+from src.camera import CameraManager, Image, ImageMetaData
+from src.data_acquisition.file_manager import FilePathManager
+from src.writers import DataManager, CSVManager, InfluxDBManager
+
 
 logger = logging.getLogger(__name__)
+
 
 class DataAcquisitionManager():
     def __init__(self, config: DataAcquisitionConfig, session_id: str,
@@ -95,14 +94,14 @@ class DataAcquisitionManager():
                 self.stop_acquisition()
 
 
-def run_acquisition_for_camera(camera_config: CameraConfig, data_acquisition_config: DataAcquisitionConfig, db_config: DBConfig, session_id: str, stop_event: threading.Event) -> None:
+def run_acquisition_for_camera(camera_config: CameraConfig, data_acquisition_config: DataAcquisitionConfig, influxdb_config: InfluxDBConfig, session_id: str, stop_event: threading.Event) -> None:
     """ カメラごとにデータ取得を行う """
     csv_filepath = Path(data_acquisition_config.data_dirpath) / session_id / f'camera{camera_config.camera_index}' / 'meta_data.csv'
 
     try:
         camera_manager = CameraManager(camera_config)
         csv_manager = CSVManager(csv_filepath)
-        influx_db_manager = InfluxDBManager(db_config, session_id)
+        influxdb_manager = InfluxDBManager(influxdb_config, session_id)
         filepath_manager = FilePathManager(session_id, camera_config.camera_index)
 
     except Exception as e:
@@ -115,7 +114,7 @@ def run_acquisition_for_camera(camera_config: CameraConfig, data_acquisition_con
         data_managers.append(csv_manager)
 
     if data_acquisition_config.send_to_db:
-        data_managers.append(influx_db_manager)
+        data_managers.append(influxdb_manager)
 
     data_acquisition_manager = DataAcquisitionManager(data_acquisition_config, session_id, camera_manager, filepath_manager, data_managers, stop_event)
 

@@ -1,5 +1,6 @@
 from pathlib import Path
 
+
 class FilePathManager():
     def __init__(self, session_id: str, camera_index: int) -> None:
         self.session_id = session_id
