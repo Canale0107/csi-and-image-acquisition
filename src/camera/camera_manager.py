@@ -27,7 +27,7 @@ class CameraManager():
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
 
-        resolution = f'{width}x{height}
+        resolution = f'{width}x{height}'
         logger.info("Setting camera %d resolution to %s.", index, resolution)
 
         # FPSを指定
