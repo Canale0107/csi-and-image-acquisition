@@ -5,11 +5,10 @@ import logging
 from pathlib import Path
 from typing import List
 from datetime import datetime, timezone
-import asyncio
 from contextlib import ExitStack
 import traceback
 import yaml
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 import numpy as np
 import cv2
 from influxdb_client import InfluxDBClient, Point, WritePrecision
@@ -77,6 +76,7 @@ class Image():
         # ディレクトリが存在しない場合は作成する
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
         cv2.imwrite(filepath, self.frame)
+        logger.info(f"Image saved: {filepath}")
 
 
 class CameraManager():
@@ -142,7 +142,9 @@ class CSVManager:
             try:
                 filepath = image.meta_data.filepath
                 timestamp = image.meta_data.acquisition_datetime.timestamp()
-                self.writer.writerow({'filepath': filepath, 'timestamp': timestamp})
+                data = {'filepath': filepath, 'timestamp': timestamp}
+                self.writer.writerow(data)
+                logger.info('metadata written: %s', data)
             except Exception as e:
                 logger.error(f"Failed to write to CSV: {e}")
 
@@ -209,7 +211,8 @@ class DBManager:
         """ データ取得終了時にデータベース接続を閉じる """
         if self.write_api is not None:
             try:
-                self.write_api.__del__()  # バッチのデータをすべて書き込む
+                self.write_api.flush()  # バッチデータを送信
+                self.write_api.close()  # write_apiを閉じる
             except Exception as e:
                 logger.error("Error while closing write API: %s", e)
         if self.client is not None:
@@ -262,8 +265,6 @@ class DataAcquisitionManager():
                     if self.config.send_to_db:
                         db_manager.write_data(image)
 
-                    logger.info(f"Image saved and metadata written for {image.meta_data.filepath}")
-
                     # 次のフレーム取得までの時間を計算し、必要ならスリープ
                     time.sleep(max(0, next_frame_time - time.time()))  # スリープ時間が負でないか確認
                     next_frame_time += sleep_time  # 次のフレーム取得時間を更新
@@ -287,27 +288,41 @@ def load_configs():
     except yaml.YAMLError as e:
         logger.error(f"Error parsing YAML file: {e}")
         raise e
+    
+    except ValidationError as e:
+        logger.error(f"Configuration validation error: {e}")
+        raise
 
     return data_acquisition_config, camera_config, db_config
 
 
 def main():
-    config, camera_config, db_config = load_configs()
+    try:
+        config, camera_config, db_config = load_configs()
+    except Exception as e:
+        logger.error("Failed to load configs: %s", e)
+        return
 
     session_id = 'session_' + datetime.now().strftime("%Y%m%d_%H%M%S")
     csv_filepath = Path(config.data_dirpath) / session_id / 'meta_data.csv'
 
-    camera_manager = CameraManager(camera_config)
-    db_manager = DBManager(db_config, session_id)
-    csv_manager = CSVManager(csv_filepath)
+    try:
+        camera_manager = CameraManager(camera_config)
+        db_manager = DBManager(db_config, session_id)
+        csv_manager = CSVManager(csv_filepath)
+    except Exception as e:
+        logger.error("Initialization failed: %s", e)
+        return
 
     data_acquisition_manager = DataAcquisitionManager(config, session_id, camera_manager, db_manager, csv_manager)
-    
+
     try:
         data_acquisition_manager.start_acquisition()
     except KeyboardInterrupt:
         logger.info("Shutting down data acquisition.")
         data_acquisition_manager.stop_acquisition()
+    except Exception as e:
+        logger.error(f"Acquisition error: {e}")
 
 if __name__ == "__main__":
     main()
