@@ -2,12 +2,23 @@ import cv2
 import logging
 
 from src.config import CameraConfig
-
+from src.camera.frame import FrameWithMetaData, MetaData
 
 logger = logging.getLogger(__name__)
 
+class FrameReader:
+    def __init__(self, cap) -> None:
+        self.cap = cap
 
-class CameraManager():
+    def read_frame(self, meta_data: MetaData) -> FrameWithMetaData:
+        ret, frame = self.cap.read()
+        if not ret:
+            raise RuntimeError("Failed to capture frame from camera.")
+        frame = cv2.flip(frame, 1)  # 画像の左右反転
+        return FrameWithMetaData(frame, meta_data)
+
+
+class CameraManager:
     """
     カメラの管理を行う
     """
@@ -41,6 +52,11 @@ class CameraManager():
 
         logger.info("Camera %s successfully opened.", index)
         return self
+    
+    def get_reader(self) -> FrameReader:
+        if self.cap is None:
+            raise RuntimeError("Recording not started.")
+        return FrameReader(self.cap)
 
     def __exit__(self, exc_type, exc_value, traceback) -> None:
         if self.cap is not None:

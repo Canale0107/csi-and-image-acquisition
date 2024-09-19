@@ -23,7 +23,7 @@ class FrameWithMetaData:
         self.frame = frame
         self.meta_data = meta_data
 
-    def save(self, image_save_dirpath: Path) -> None:
+    def save_frame(self, image_save_dirpath: Path) -> None:
         filepath = Path(image_save_dirpath) / self.meta_data.filepath
         # ディレクトリが存在しない場合は作成する
         os.makedirs(os.path.dirname(filepath), exist_ok=True)

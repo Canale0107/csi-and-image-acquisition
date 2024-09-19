@@ -1,7 +1,7 @@
 from datetime import datetime
 import logging
 
-from influxdb_client import Point, WritePrecision
+from influxdb_client import Point, WritePrecision, WriteApi
 
 from src.config import InfluxDBConfig
 from src.camera import MetaData
@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class InfluxDBWriter(DataWriter):
-    def __init__(self, write_api, bucket: str) -> None:
+    def __init__(self, write_api: WriteApi, bucket: str) -> None:
         self.write_api = write_api
         self.bucket = bucket
 

@@ -4,6 +4,7 @@ import logging
 from pathlib import Path
 from typing import List
 import threading
+import traceback
 from contextlib import ExitStack
 
 import cv2
@@ -28,12 +29,8 @@ class DataAcquisitionManager():
         self.data_managers = data_managers
         self.stop_event = stop_event
 
-    def capture_frame_with_meta_data(self) -> FrameWithMetaData:
+    def get_meta_data(self) -> FrameWithMetaData:
         """ フレームをキャプチャして FrameWithMetaData オブジェクトを返す """
-        ret, frame = self.camera_manager.cap.read()
-        if not ret:
-            raise RuntimeError("Failed to capture frame from camera.")
-        frame = cv2.flip(frame, 1)  # 画像の左右反転
         timestamp = datetime.now(timezone.utc)
         filepath = self.filepath_manager.get_filepath(timestamp)
         meta_data = MetaData(
@@ -42,17 +39,18 @@ class DataAcquisitionManager():
             timestamp=timestamp,
             filepath=filepath
         )
-        return FrameWithMetaData(frame, meta_data)
+        return meta_data
 
-    def save_and_write_frame(self, frame_with_meta_data: FrameWithMetaData, 
+    def save_meta_data(self, frame_with_meta_data: FrameWithMetaData, 
                              writers: List[DataWriter]) -> None:
         """ イメージを保存し、データを書き込む """
-        frame_with_meta_data.save(self.config.data_dirpath)
         for writer in writers:
             try:
                 writer.write_data(frame_with_meta_data.meta_data)
             except Exception as e:
                 logger.error("Failed to write data: %s", e)
+                traceback.print_exc()  # エラーメッセージを表示
+                raise  # エラーを再度発生させてプログラムを停止させる
 
     def handle_error(self, e: Exception) -> None:
         """ エラーハンドリング """
@@ -61,7 +59,8 @@ class DataAcquisitionManager():
     def start_acquisition(self) -> None:
         """ データ取得の開始 """
         with ExitStack() as stack:
-            stack.enter_context(self.camera_manager)
+            camera_manager = stack.enter_context(self.camera_manager)
+            frame_reader = camera_manager.get_reader()
 
             writers = []
             for data_manager in self.data_managers:
@@ -77,8 +76,12 @@ class DataAcquisitionManager():
             try:
                 while not self.stop_event.is_set():
                     try:
-                        frame_with_meta_data = self.capture_frame_with_meta_data()  # フレームをキャプチャ
-                        self.save_and_write_frame(frame_with_meta_data, writers)  # イメージを保存
+                        meta_data = self.get_meta_data()
+                        logger.info('meta_data: %s', meta_data)
+                        frame_with_meta_data = frame_reader.read_frame(meta_data)
+                        frame_with_meta_data.save_frame(self.config.data_dirpath)
+                        self.save_meta_data(frame_with_meta_data, writers)
+
                         # 次のフレーム取得までの時間を計算し、必要ならスリープ
                         time.sleep(max(0, next_frame_time - time.time()))  # スリープ時間が負でないか確認
                         next_frame_time += sleep_time  # 次のフレーム取得時間を更新
