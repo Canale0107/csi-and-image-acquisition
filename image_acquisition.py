@@ -3,7 +3,7 @@ import csv
 import time
 import logging
 from pathlib import Path
-from typing import List
+from typing import Tuple, List
 from datetime import datetime, timezone
 from contextlib import ExitStack
 import traceback
@@ -15,7 +15,13 @@ from influxdb_client import InfluxDBClient, Point, WritePrecision
 
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler()
+    ]
+)
 
 
 class CameraConfig(BaseModel):
@@ -102,17 +108,22 @@ class CameraManager():
             raise ValueError(f"Camera {self.config.camera_index} cannot be opened.")
         return self
     
-    def get_image(self):
-        ret, frame = self.cap.read()
+    def get_image(self) -> Tuple[bool, Image]:
+        try:
+            ret, frame = self.cap.read()
+            if not ret:
+                raise RuntimeError("Failed to capture frame from camera.")
+            
+            acquisition_datetime = datetime.now(timezone.utc)
+            meta_data = ImageMetaData(self.config, acquisition_datetime)
 
-        # メタデータを取得
-        acquisition_datetime = datetime.now(timezone.utc)
-        meta_data = ImageMetaData(self.config, acquisition_datetime)
+            frame = cv2.flip(frame, 1)
+            image = Image(frame, meta_data)
 
-        frame = cv2.flip(frame, 1)
-        image = Image(frame, meta_data)
-
-        return ret, image
+            return ret, image
+        except Exception as e:
+            logger.error("Error capturing image: %s", e)
+            raise  # エラーを上位に投げる
 
     def __exit__(self, exc_type, exc_value, traceback):
         if self.cap is not None:
@@ -146,7 +157,8 @@ class CSVManager:
                 self.writer.writerow(data)
                 logger.info('metadata written: %s', data)
             except Exception as e:
-                logger.error(f"Failed to write to CSV: {e}")
+                logger.error("Error occured while writing to CSV: %s", e)
+                raise
 
     def __exit__(self, exc_type, exc_value, traceback):
         """ データ取得終了時にファイルを閉じる """
@@ -184,7 +196,7 @@ class DBManager:
             logger.info(f"Database health: {health.status}")
         except Exception as e:
             logger.error(f"Failed to connect to database: {e}")
-            raise e  # 問題があれば例外を再スロー
+            raise
 
         return self
 
@@ -204,8 +216,8 @@ class DBManager:
             self.write_api.write(bucket=self.config.bucket, record=point)
             logger.info(f"Data written to DB: {point}")
         except Exception as e:
-            logger.error("Failed to write to DB: %s", e)
-            logger.error(traceback.format_exc())
+            logger.error("Error occured while writing data to DB: %s", e)
+            raise
 
     def __exit__(self, exc_type, exc_value, traceback):
         """ データ取得終了時にデータベース接続を閉じる """
@@ -215,6 +227,7 @@ class DBManager:
                 self.write_api.close()  # write_apiを閉じる
             except Exception as e:
                 logger.error("Error while closing write API: %s", e)
+                return False
         if self.client is not None:
             self.client.close()
 
@@ -226,7 +239,8 @@ class DataAcquisitionConfig(BaseModel):
 
 
 class DataAcquisitionManager():
-    def __init__(self, config: DataAcquisitionConfig, session_id, camera_manager, db_manager, csv_manager):
+    def __init__(self, config: DataAcquisitionConfig, session_id: str, 
+                camera_manager: CameraManager, db_manager: DBManager, csv_manager: CSVManager):
         self.config = config
         self.session_id = session_id
         self.camera_manager = camera_manager
@@ -268,8 +282,11 @@ class DataAcquisitionManager():
                     # 次のフレーム取得までの時間を計算し、必要ならスリープ
                     time.sleep(max(0, next_frame_time - time.time()))  # スリープ時間が負でないか確認
                     next_frame_time += sleep_time  # 次のフレーム取得時間を更新
-            except KeyboardInterrupt:
-                logger.info("Data acquisition interrupted by user.")
+            except Exception as e:
+                logger.error(f"Error during acquisition: {e}")
+                raise  # エラーを再度上位層に投げる
+            finally:
+                self.stop_acquisition()
 
 
 def load_configs():
@@ -283,11 +300,11 @@ def load_configs():
 
     except FileNotFoundError as e:
         logger.error("Configuration file not found.")
-        raise e
+        raise
 
     except yaml.YAMLError as e:
         logger.error(f"Error parsing YAML file: {e}")
-        raise e
+        raise
     
     except ValidationError as e:
         logger.error(f"Configuration validation error: {e}")
@@ -312,7 +329,7 @@ def main():
         csv_manager = CSVManager(csv_filepath)
     except Exception as e:
         logger.error("Initialization failed: %s", e)
-        return
+        raise
 
     data_acquisition_manager = DataAcquisitionManager(config, session_id, camera_manager, db_manager, csv_manager)
 
@@ -323,6 +340,7 @@ def main():
         data_acquisition_manager.stop_acquisition()
     except Exception as e:
         logger.error(f"Acquisition error: {e}")
+        raise
 
 if __name__ == "__main__":
     main()
