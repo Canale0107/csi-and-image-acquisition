@@ -44,8 +44,7 @@ class FilePathManager():
         date = timestamp.strftime("%Y-%m-%d")
         hour = timestamp.strftime("%H")
         minute = timestamp.strftime("%M")
-        second = timestamp.strftime("%S")
-        parent_dir = Path(self.session_id) / 'image' / ('camera' + str(self.camera_index)) / date / hour / minute / second
+        parent_dir = Path(self.session_id) / 'image' / ('camera' + str(self.camera_index)) / date / hour / minute
         return parent_dir
 
     def get_filepath(self, timestamp) -> Path:
