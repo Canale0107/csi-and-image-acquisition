@@ -97,7 +97,7 @@ def initialize_managers(camera_config: CameraConfig,
     try:
         camera_manager = CameraManager(camera_config)
         csv_manager = CSVWriterManager(csv_filepath)
-        influxdb_manager = InfluxDBWriterManager(influxdb_config, session_id)
+        influxdb_manager = InfluxDBWriterManager(influxdb_config)
         filepath_manager = FilePathManager(session_id, camera_config.camera_index)
         return camera_manager, csv_manager, influxdb_manager, filepath_manager
     except Exception as e:

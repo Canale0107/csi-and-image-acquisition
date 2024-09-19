@@ -31,9 +31,8 @@ class InfluxDBWriter(DataWriter):
 
 
 class InfluxDBWriterManager(WriterManager):
-    def __init__(self, config: InfluxDBConfig, session_id: str) -> None:
+    def __init__(self, config: InfluxDBConfig) -> None:
         self.config = config
-        self.session_id = session_id
         self.client = None
         self.write_api = None
 
