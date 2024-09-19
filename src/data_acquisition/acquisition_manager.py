@@ -58,7 +58,7 @@ class DataAcquisitionManager():
                         ret, frame = camera_manager.cap.read()
                         if not ret:
                             raise RuntimeError("Failed to capture frame from camera.")
-                        
+
                         frame = cv2.flip(frame, 1)
 
                         timestamp = datetime.now(timezone.utc)
@@ -68,7 +68,7 @@ class DataAcquisitionManager():
                             camera_index = self.camera_manager.config.camera_index,
                             timestamp = timestamp,
                             filepath = filepath)
-                        
+
                         image = Image(frame, meta_data)
 
                         image.save(image_save_dirpath)

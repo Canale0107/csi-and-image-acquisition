@@ -18,7 +18,7 @@ class ImageMetaData(BaseModel):
     filepath: Path
 
 
-class Image():
+class Image:
     def __init__(self, frame: np.ndarray, meta_data: ImageMetaData) -> None:
         self.frame = frame
         self.meta_data = meta_data
