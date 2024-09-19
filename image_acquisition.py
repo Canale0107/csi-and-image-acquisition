@@ -1,4 +1,5 @@
 import os
+import io
 import csv
 import time
 import logging
@@ -33,7 +34,7 @@ class CameraConfig(BaseModel):
 
 class FilePathManager():
 
-    def __init__(self, session_id: str, camera_index: int) -> Path:
+    def __init__(self, session_id: str, camera_index: int) -> None:
         self.session_id = session_id
         self.camera_index = camera_index
         self.image_counter = 0
@@ -147,7 +148,7 @@ class DataManager(ABC):
 
 
 class CSVWriter(DataWriter):
-    def __init__(self, file) -> None:
+    def __init__(self, file: io.TextIOWrapper) -> None:
         self.writer = csv.DictWriter(file, fieldnames=['session_id', 'camera_index', 'filepath', 'timestamp'])
         self.writer.writeheader()
 
@@ -162,7 +163,6 @@ class CSVWriter(DataWriter):
         }
 
         self.writer.writerow(meta_data)
-        logger.info("Data written to CSV: %s", meta_data)
 
 
 class CSVManager(DataManager):
@@ -174,7 +174,7 @@ class CSVManager(DataManager):
     def __enter__(self) -> 'CSVManager':
         """ 一度だけCSVファイルをオープン """
         os.makedirs(os.path.dirname(self.filepath), exist_ok=True)
-        self.file = open(self.filepath, mode='w', newline='', encoding='utf-8')
+        self.file = open(self.filepath, mode='w', newline='', encoding='utf-8', buffering=10*1024)
         return self
 
     def get_writer(self) -> CSVWriter:
@@ -273,17 +273,19 @@ class DataAcquisitionConfig(BaseModel):
 
 class DataAcquisitionManager():
     def __init__(self, config: DataAcquisitionConfig, session_id: str,
-                camera_manager: CameraManager, filepath_manager = FilePathManager) -> None:
+                camera_manager: CameraManager, filepath_manager: FilePathManager,
+                data_managers: List[DataManager]) -> None:
         self.config = config
         self.session_id = session_id
         self.camera_manager = camera_manager
         self.filepath_manager = filepath_manager
+        self.data_managers = data_managers
         self._running = False
 
     def stop_acquisition(self) -> None:
         self._running = False
 
-    def start_acquisition(self, data_managers: List[DataManager]) -> None:
+    def start_acquisition(self) -> None:
         """ データ取得の開始 """
 
         image_save_dirpath = os.path.join(self.config.data_dirpath)
@@ -292,7 +294,7 @@ class DataAcquisitionManager():
             camera_manager = stack.enter_context(self.camera_manager)
 
             writers = []
-            for data_manager in data_managers:
+            for data_manager in self.data_managers:
                 data_manager = stack.enter_context(data_manager)
                 writer = data_manager.get_writer()
                 writers.append(writer)
@@ -324,7 +326,10 @@ class DataAcquisitionManager():
                     image.save(image_save_dirpath)
 
                     for writer in writers:
-                        writer.write_data(meta_data)
+                        try:
+                            writer.write_data(meta_data)
+                        except Exception as e:
+                            logger.error("Failed to write data: %s", e)
 
                     # 次のフレーム取得までの時間を計算し、必要ならスリープ
                     time.sleep(max(0, next_frame_time - time.time()))  # スリープ時間が負でないか確認
@@ -332,7 +337,7 @@ class DataAcquisitionManager():
 
             except Exception as e:
                 logger.error("Error during acquisition: %s", e)
-                raise  # エラーを再度上位層に投げる
+                self.stop_acquisition()
 
             finally:
                 self.stop_acquisition()
@@ -364,14 +369,14 @@ def load_configs() -> Tuple[DataAcquisitionConfig, CameraConfig, DBConfig]:
 
 def main() -> None:
     try:
-        config, camera_config, db_config = load_configs()
+        data_acquisition_config, camera_config, db_config = load_configs()
 
     except Exception as e:
         logger.error("Failed to load configs: %s", e)
         return
 
     session_id = 'session_' + datetime.now().strftime("%Y%m%d_%H%M%S")
-    csv_filepath = Path(config.data_dirpath) / session_id / 'meta_data.csv'
+    csv_filepath = Path(data_acquisition_config.data_dirpath) / session_id / 'meta_data.csv'
 
     try:
         camera_manager = CameraManager(camera_config)
@@ -383,18 +388,18 @@ def main() -> None:
         logger.error("Initialization failed: %s", e)
         raise
 
-    data_acquisition_manager = DataAcquisitionManager(config, session_id, camera_manager, filepath_manager)
+    data_managers = []
+
+    if data_acquisition_config.save_to_csv:
+        data_managers.append(csv_manager)
+
+    if data_acquisition_config.send_to_db:
+        data_managers.append(db_manager)
+
+    data_acquisition_manager = DataAcquisitionManager(data_acquisition_config, session_id, camera_manager, filepath_manager, data_managers)
 
     try:
-        data_managers = []
-
-        if config.save_to_csv:
-            data_managers.append(csv_manager)
-
-        if config.send_to_db:
-            data_managers.append(db_manager)
-
-        data_acquisition_manager.start_acquisition(data_managers)
+        data_acquisition_manager.start_acquisition()
 
     except KeyboardInterrupt:
         logger.info("Shutting down data acquisition.")
