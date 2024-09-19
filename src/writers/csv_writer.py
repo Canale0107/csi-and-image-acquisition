@@ -4,7 +4,7 @@ import csv
 import logging
 from pathlib import Path
 
-from src.camera.image import MetaData
+from src.camera.frame import MetaData
 from src.writers import DataWriter, WriterManager
 
 
@@ -29,13 +29,13 @@ class CSVWriter(DataWriter):
         self.writer.writerow(meta_data)
 
 
-class CSVManager(WriterManager):
+class CSVWriterManager(WriterManager):
     def __init__(self, filepath: Path) -> None:
         self.filepath = filepath
         self.file = None
         self.writer = None
 
-    def __enter__(self) -> 'CSVManager':
+    def __enter__(self) -> 'CSVWriterManager':
         """ 一度だけCSVファイルをオープン """
         os.makedirs(os.path.dirname(self.filepath), exist_ok=True)
         self.file = open(self.filepath, mode='w', newline='', encoding='utf-8', buffering=10*1024)

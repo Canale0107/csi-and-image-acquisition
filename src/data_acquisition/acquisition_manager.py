@@ -11,7 +11,7 @@ import cv2
 from src.config import DataAcquisitionConfig, CameraConfig, InfluxDBConfig
 from src.camera import CameraManager, FrameWithMetaData, MetaData
 from src.data_acquisition.file_manager import FilePathManager
-from src.writers import DataWriter, WriterManager, CSVManager, InfluxDBManager
+from src.writers import DataWriter, WriterManager, CSVWriterManager, InfluxDBWriterManager
 
 
 logger = logging.getLogger(__name__)
@@ -96,8 +96,8 @@ def initialize_managers(camera_config: CameraConfig,
                         session_id: str, csv_filepath: Path):
     try:
         camera_manager = CameraManager(camera_config)
-        csv_manager = CSVManager(csv_filepath)
-        influxdb_manager = InfluxDBManager(influxdb_config, session_id)
+        csv_manager = CSVWriterManager(csv_filepath)
+        influxdb_manager = InfluxDBWriterManager(influxdb_config, session_id)
         filepath_manager = FilePathManager(session_id, camera_config.camera_index)
         return camera_manager, csv_manager, influxdb_manager, filepath_manager
     except Exception as e:

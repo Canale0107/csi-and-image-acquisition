@@ -30,14 +30,14 @@ class InfluxDBWriter(DataWriter):
         logger.info("Data written to DB: %s", point)
 
 
-class InfluxDBManager(WriterManager):
+class InfluxDBWriterManager(WriterManager):
     def __init__(self, config: InfluxDBConfig, session_id: str) -> None:
         self.config = config
         self.session_id = session_id
         self.client = None
         self.write_api = None
 
-    def __enter__(self) -> 'InfluxDBManager':
+    def __enter__(self) -> 'InfluxDBWriterManager':
         """ データ取得開始時にデータベースに接続 """
         self.client = self.config.get_client()
         self.write_api = self.client.write_api()

@@ -23,7 +23,7 @@ image-acquisition/
 │   │
 │   ├── writers/
 │   │   ├── abstract_writer.py      # 抽象クラス（DataWriter, WriterManagerの抽象クラス）
-│   │   ├── csv_writer.py           # CSVWriter, CSVManagerクラス
+│   │   ├── csv_writer.py           # CSVWriter, CSVWriterManagerクラス
 │   │   └── db_writer.py            # InfluxDBWriter, DBManagerクラス
 │   │
 │   ├── config/
