@@ -19,7 +19,7 @@ logging.basicConfig(
 
 def main() -> None:
     try:
-        data_acquisition_config, camera_configs, db_config = load_configs()
+        data_acquisition_config, camera_configs, influxdb_config = load_configs()
 
     except Exception as e:
         logger.error("Failed to load configs: %s", e)
@@ -32,7 +32,7 @@ def main() -> None:
     for camera_config in camera_configs:
         thread = threading.Thread(
             target=run_acquisition_for_camera,
-            args=(camera_config, data_acquisition_config, db_config, session_id, stop_event)
+            args=(camera_config, data_acquisition_config, influxdb_config, session_id, stop_event)
         )
         threads.append(thread)
 
