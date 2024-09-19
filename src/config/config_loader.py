@@ -43,16 +43,17 @@ def load_configs() -> Tuple[DataAcquisitionConfig, CameraConfig, InfluxDBConfig]
         
         logger.info("Parsing data acquisition configuration.")
         data_acquisition_config = DataAcquisitionConfig.parse_obj(config['data_acquisition'])
-        logger.info(f"Data acquisition config: {data_acquisition_config.dict()}")
+        logger.info("Data acquisition config: %s", data_acquisition_config.dict())
 
         logger.info("Parsing camera configurations.")
         camera_configs = [CameraConfig.parse_obj(cam_config) for cam_config in config['camera']]
-        logger.info(f"Loaded {len(camera_configs)} camera configurations: {[cam_config.dict() for cam_config in camera_configs]}")
+        cam_config_dicts =  [cam_config.dict() for cam_config in camera_configs]
+        logger.info("Loaded %d camera configurations: %s", len(camera_configs), cam_config_dicts)
 
         logger.info("Parsing InfluxDB configuration.")
         influxdb_config = InfluxDBConfig.parse_obj(config['influxdb'])
         logger.info("InfluxDB configuration loaded (token is hidden for security reasons).")
-        logger.info(f"InfluxDB config (excluding token): {influxdb_config.dict(exclude={'token'})}")
+        logger.info("InfluxDB config (excluding token): %s", influxdb_config.dict(exclude={'token'}))
 
     except FileNotFoundError as e:
         logger.error("Configuration file not found: %s", e)
