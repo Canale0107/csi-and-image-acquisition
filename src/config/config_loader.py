@@ -53,7 +53,8 @@ def load_configs() -> Tuple[DataAcquisitionConfig, CameraConfig, InfluxDBConfig]
         logger.info("Parsing InfluxDB configuration.")
         influxdb_config = InfluxDBConfig.parse_obj(config['influxdb'])
         logger.info("InfluxDB configuration loaded (token is hidden for security reasons).")
-        logger.info("InfluxDB config (excluding token): %s", influxdb_config.dict(exclude={'token'}))
+        influxdb_config_dict = influxdb_config.dict(exclude={'token'})
+        logger.info("InfluxDB config (excluding token): %s", influxdb_config_dict)
 
     except FileNotFoundError as e:
         logger.error("Configuration file not found: %s", e)
