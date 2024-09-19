@@ -3,10 +3,10 @@ import csv
 import time
 import logging
 from pathlib import Path
-from typing import Tuple, List
+from typing import Tuple, List, Any
 from datetime import datetime, timezone
 from contextlib import ExitStack
-import traceback
+from abc import ABC, abstractmethod
 import yaml
 from pydantic import BaseModel, ValidationError
 import numpy as np
@@ -35,19 +35,27 @@ class ImageMetaData():
     image_counter = 0  # クラス変数で連番を管理
     current_second = None  # 現在の秒を保持
 
-    def __init__(self, camera_config: CameraConfig, acquisition_datetime: datetime) -> None:
-        self.camera_config = camera_config
-        self.acquisition_datetime = acquisition_datetime
-        self.resolution = f'{self.camera_config.width}x{self.camera_config.height}'
+    def __init__(self, session_id: str, camera_index: int, timestamp: datetime) -> None:
+        self.session_id = session_id
+        self.camera_index = camera_index
+        self.timestamp = timestamp
         self.filepath = self._get_filepath()
+
+    def to_dict(self):
+        return {
+            "session_id": str(self.session_id),
+            "camera_index": int(self.camera_index),
+            "filepath": str(self.filepath), 
+            "timestamp": self.timestamp
+        }
 
     def _get_parent_dir(self) -> Path:
         """親ディレクトリを取得する（例：日付を親ディレクトリとする）"""
-        date = self.acquisition_datetime.strftime("%Y-%m-%d")
-        hour = self.acquisition_datetime.strftime("%H")
-        minute = self.acquisition_datetime.strftime("%M")
-        second = self.acquisition_datetime.strftime("%S")
-        parent_dir = Path('camera' + str(self.camera_config.camera_index)) / date / hour / minute / second
+        date = self.timestamp.strftime("%Y-%m-%d")
+        hour = self.timestamp.strftime("%H")
+        minute = self.timestamp.strftime("%M")
+        second = self.timestamp.strftime("%S")
+        parent_dir = Path(self.session_id) / 'image' / ('camera' + str(self.camera_index)) / date / hour / minute / second
         return parent_dir
 
     def _get_filepath(self) -> Path:
@@ -55,7 +63,7 @@ class ImageMetaData():
         parent_dir = self._get_parent_dir()
 
         # 現在の秒を取得
-        current_second = self.acquisition_datetime.strftime("%S")
+        current_second = self.timestamp.strftime("%S")
 
         # 秒が変わったら連番をリセット
         if ImageMetaData.current_second != current_second:
@@ -65,8 +73,8 @@ class ImageMetaData():
             ImageMetaData.image_counter += 1  # 連番をインクリメント
 
         # ファイル名を連番付きで生成
-        filename = (f'camera{self.camera_config.camera_index}_'
-                    f'{self.acquisition_datetime.strftime("%Y-%m-%d_%H-%M-%S")}_'
+        filename = (f'camera{self.camera_index}_'
+                    f'{self.timestamp.strftime("%Y-%m-%d_%H-%M-%S")}_'
                     f'{ImageMetaData.image_counter}.jpg')
 
         filepath = Path(parent_dir) / filename
@@ -109,19 +117,15 @@ class CameraManager():
             raise ValueError(f"Camera {self.config.camera_index} cannot be opened.")
         return self
 
-    def get_image(self) -> Tuple[bool, Image]:
+    def get_frame(self) -> Tuple[bool, Image]:
         try:
             ret, frame = self.cap.read()
             if not ret:
                 raise RuntimeError("Failed to capture frame from camera.")
 
-            acquisition_datetime = datetime.now(timezone.utc)
-            meta_data = ImageMetaData(self.config, acquisition_datetime)
-
             frame = cv2.flip(frame, 1)
-            image = Image(frame, meta_data)
 
-            return ret, image
+            return ret, frame
 
         except Exception as e:
             logger.error("Error capturing image: %s", e)
@@ -133,36 +137,54 @@ class CameraManager():
         cv2.destroyAllWindows()
 
 
-class CSVManager:
+class DataWriter(ABC):
+    @abstractmethod
+    def write_data(self, data: Any) -> None:
+        """データを適切な書き込み先に保存する抽象メソッド"""
+        pass
+
+
+class DataManager(ABC):
+    @abstractmethod
+    def get_writer(self) -> DataWriter:
+        pass
+
+
+class CSVWriter(DataWriter):
+    def __init__(self, file) -> None:
+        self.writer = csv.DictWriter(file, fieldnames=['session_id', 'camera_index', 'filepath', 'timestamp'])
+        self.writer.writeheader()
+
+    def write_data(self, data: dict) -> None:
+        """ CSVにデータを書き込む """
+        # 元のデータを変えず、ローカル変数でタイムスタンプを変換
+        data_copy = data.copy()
+        if isinstance(data_copy.get('timestamp'), datetime):
+            data_copy['timestamp'] = data_copy['timestamp'].timestamp()
+        self.writer.writerow(data_copy)
+        logger.info("Data written to CSV: %s", data_copy)
+
+
+class CSVManager(DataManager):
     def __init__(self, filepath: str) -> None:
         self.filepath = filepath
-        self.fieldnames = ['filepath', 'timestamp']
         self.file = None
         self.writer = None
 
     def __enter__(self) -> 'CSVManager':
-        """ データ取得開始時にファイルを開いてCSV writerを初期化 """
+        """ 一度だけCSVファイルをオープン """
         os.makedirs(os.path.dirname(self.filepath), exist_ok=True)
         self.file = open(self.filepath, mode='w', newline='', encoding='utf-8')
-        self.writer = csv.DictWriter(self.file, fieldnames=self.fieldnames)
-        self.writer.writeheader()
         return self
 
-    def write_data(self, image: Image) -> None:
-        """ 画像のメタデータをCSVファイルに書き込む """
-        if self.writer:
-            try:
-                filepath = image.meta_data.filepath
-                timestamp = image.meta_data.acquisition_datetime.timestamp()
-                data = {'filepath': filepath, 'timestamp': timestamp}
-                self.writer.writerow(data)
-                logger.info('metadata written: %s', data)
-            except Exception as e:
-                logger.error("Error occured while writing to CSV: %s", e)
-                raise
+    def get_writer(self) -> CSVWriter:
+        """ CSVWriterインスタンスを返す """
+        if self.file is None:
+            raise RuntimeError("CSVファイルがオープンされていません。")
+        return CSVWriter(self.file)
 
     def __exit__(self, exc_type, exc_value, traceback) -> None:
-        """ データ取得終了時にファイルを閉じる """
+        """ ファイルを閉じる """
         if self.file:
             self.file.close()
 
@@ -179,7 +201,30 @@ class DBConfig(BaseModel):
         """
         return InfluxDBClient(url=self.url, token=self.token, org=self.org)
 
-class DBManager:
+
+class InfluxDBWriter(DataWriter):
+    def __init__(self, write_api, bucket: str) -> None:
+        self.write_api = write_api
+        self.bucket = bucket
+
+    def write_data(self, data: dict) -> None:
+        """ InfluxDBにデータを書き込む """
+
+        # 元のデータを変えず、ローカル変数でタイムスタンプを変換
+        data_copy = data.copy()
+
+        assert isinstance(data_copy.get('timestamp'), datetime), \
+            f"Expected timestamp to be datetime, but got {type(data_copy.get('timestamp'))}"
+
+        point = Point("IMAGE_DATA").tag("session_id", data_copy["session_id"]) \
+                                    .tag("camera_index", data_copy["camera_index"]) \
+                                    .field("filepath", data_copy["filepath"]) \
+                                    .time(data_copy["timestamp"], WritePrecision.NS)
+        self.write_api.write(bucket=self.bucket, record=point)
+        logger.info("Data written to DB: %s", point)
+
+
+class DBManager(DataManager):
     def __init__(self, config: DBConfig, session_id: str) -> None:
         self.config = config
         self.session_id = session_id
@@ -194,32 +239,19 @@ class DBManager:
         # データベース接続のテスト
         try:
             health = self.client.health()
-            logger.info(f"Database health: {health.status}")
+            logger.info("Database health: %s", health.status)
         except Exception as e:
-            logger.error(f"Failed to connect to database: {e}")
+            logger.error("Failed to connect to database: %s", e)
             raise
 
         return self
 
-    def write_data(self, image) -> None:
-        """ 画像データのメタ情報をデータベースに書き込む """
-        try:
-            measurement = "IMAGE_DATA"
-            fields = {"filepath": str(image.meta_data.filepath)}
-            tags = {"session_id": str(self.session_id),
-                    "camera_index": int(image.meta_data.camera_config.camera_index)}
-            timestamp = image.meta_data.acquisition_datetime
+    def get_writer(self) -> InfluxDBWriter:
+        """ InfluxDBWriterインスタンスを返す """
+        if self.client is None or self.write_api is None:
+            raise RuntimeError("Not connected to DB.")
+        return InfluxDBWriter(self.write_api, self.config.bucket)
 
-            point = Point(measurement).tag("session_id", tags["session_id"]) \
-                                        .tag("camera_index", tags["camera_index"]) \
-                                        .field("filepath", fields["filepath"]) \
-                                        .time(timestamp, WritePrecision.NS)
-            self.write_api.write(bucket=self.config.bucket, record=point)
-            logger.info("Data written to DB: %s", point)
-
-        except Exception as e:
-            logger.error("Error occured while writing data to DB: %s", e)
-            raise
 
     def __exit__(self, exc_type, exc_value, traceback) -> None:
         """ データ取得終了時にデータベース接続を閉じる """
@@ -244,26 +276,29 @@ class DataAcquisitionConfig(BaseModel):
 
 class DataAcquisitionManager():
     def __init__(self, config: DataAcquisitionConfig, session_id: str,
-                camera_manager: CameraManager, db_manager: DBManager, csv_manager: CSVManager) -> None:
+                camera_manager: CameraManager) -> None:
         self.config = config
         self.session_id = session_id
         self.camera_manager = camera_manager
-        self.db_manager = db_manager
-        self.csv_manager = csv_manager
         self._running = False
 
     def stop_acquisition(self) -> None:
         self._running = False
 
-    def start_acquisition(self) -> None:
+    def start_acquisition(self, data_managers: List[DataManager]) -> None:
         """ データ取得の開始 """
 
-        image_save_dirpath = os.path.join(self.config.data_dirpath, self.session_id, 'image')
+        image_save_dirpath = os.path.join(self.config.data_dirpath)
 
         with ExitStack() as stack:
             camera_manager = stack.enter_context(self.camera_manager)
-            csv_manager = stack.enter_context(self.csv_manager)
-            db_manager = stack.enter_context(self.db_manager)
+
+            writers = []
+            for data_manager in data_managers:
+                data_manager = stack.enter_context(data_manager)
+                writer = data_manager.get_writer()
+                writers.append(writer)
+
             # カメラのFPSに基づいてスリープ時間を計算 (秒)
             fps = self.camera_manager.config.fps
             sleep_time = 1.0 / fps  # 1フレームの取得に要する時間 (秒)
@@ -272,22 +307,27 @@ class DataAcquisitionManager():
             self._running = True
             try:
                 while self._running:
-                    ret, image = camera_manager.get_image()
+                    
+                    ret, frame = camera_manager.get_frame()
                     if not ret:
-                        logger.error(f"Error capturing frame from camera {camera_manager.config.camera_index}")
+                        logger.error("Error capturing frame from camera %d", camera_manager.config.camera_index)
                         break
 
+                    timestamp = datetime.now(timezone.utc)
+
+                    meta_data = ImageMetaData(self.session_id, self.camera_manager.config.camera_index, timestamp)
+                    image = Image(frame, meta_data)
+
                     image.save(image_save_dirpath)
-                    if self.config.save_to_csv:
-                        csv_manager.write_data(image)
-                    if self.config.send_to_db:
-                        db_manager.write_data(image)
+
+                    for writer in writers:
+                        writer.write_data(meta_data.to_dict())
 
                     # 次のフレーム取得までの時間を計算し、必要ならスリープ
                     time.sleep(max(0, next_frame_time - time.time()))  # スリープ時間が負でないか確認
                     next_frame_time += sleep_time  # 次のフレーム取得時間を更新
             except Exception as e:
-                logger.error(f"Error during acquisition: {e}")
+                logger.error("Error during acquisition: %s", e)
                 raise  # エラーを再度上位層に投げる
             finally:
                 self.stop_acquisition()
@@ -329,21 +369,30 @@ def main() -> None:
 
     try:
         camera_manager = CameraManager(camera_config)
-        db_manager = DBManager(db_config, session_id)
         csv_manager = CSVManager(csv_filepath)
+        db_manager = DBManager(db_config, session_id)
+
     except Exception as e:
         logger.error("Initialization failed: %s", e)
         raise
 
-    data_acquisition_manager = DataAcquisitionManager(config, session_id, camera_manager, db_manager, csv_manager)
+    data_acquisition_manager = DataAcquisitionManager(config, session_id, camera_manager)
 
     try:
-        data_acquisition_manager.start_acquisition()
+        data_managers = []
+
+        if config.save_to_csv:
+            data_managers.append(csv_manager)
+
+        if config.send_to_db:
+            data_managers.append(db_manager)
+
+        data_acquisition_manager.start_acquisition(data_managers)
     except KeyboardInterrupt:
         logger.info("Shutting down data acquisition.")
         data_acquisition_manager.stop_acquisition()
     except Exception as e:
-        logger.error(f"Acquisition error: {e}")
+        logger.error("Acquisition error: %s", e)
         raise
 
 if __name__ == "__main__":
