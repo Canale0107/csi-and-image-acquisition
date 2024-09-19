@@ -22,7 +22,7 @@ image-acquisition/
 │   │   └── file_manager.py         # ファイルパス管理（FilePathManagerクラス）
 │   │
 │   ├── writers/
-│   │   ├── abstract_writer.py      # 抽象クラス（DataWriter, DataManagerの抽象クラス）
+│   │   ├── abstract_writer.py      # 抽象クラス（DataWriter, WriterManagerの抽象クラス）
 │   │   ├── csv_writer.py           # CSVWriter, CSVManagerクラス
 │   │   └── db_writer.py            # InfluxDBWriter, DBManagerクラス
 │   │
