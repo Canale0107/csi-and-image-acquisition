@@ -5,6 +5,7 @@ import logging
 from pydantic import BaseModel, ValidationError
 from influxdb_client import InfluxDBClient
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -36,12 +37,22 @@ class InfluxDBConfig(BaseModel):
 
 def load_configs() -> Tuple[DataAcquisitionConfig, CameraConfig, InfluxDBConfig]:
     try:
+        logger.info("Loading configuration file: config.yml")
         with open("config.yml", "r", encoding='utf-8') as file:
             config = yaml.safe_load(file)
-
+        
+        logger.info("Parsing data acquisition configuration.")
         data_acquisition_config = DataAcquisitionConfig.parse_obj(config['data_acquisition'])
+        logger.info(f"Data acquisition config: {data_acquisition_config.dict()}")
+
+        logger.info("Parsing camera configurations.")
         camera_configs = [CameraConfig.parse_obj(cam_config) for cam_config in config['camera']]
+        logger.info(f"Loaded {len(camera_configs)} camera configurations: {[cam_config.dict() for cam_config in camera_configs]}")
+
+        logger.info("Parsing InfluxDB configuration.")
         influxdb_config = InfluxDBConfig.parse_obj(config['influxdb'])
+        logger.info("InfluxDB configuration loaded (token is hidden for security reasons).")
+        logger.info(f"InfluxDB config (excluding token): {influxdb_config.dict(exclude={'token'})}")
 
     except FileNotFoundError as e:
         logger.error("Configuration file not found: %s", e)
