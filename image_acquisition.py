@@ -114,20 +114,6 @@ class CameraManager():
             raise ValueError(f"Camera {self.config.camera_index} cannot be opened.")
         return self
 
-    def get_frame(self) -> Tuple[bool, Image]:
-        try:
-            ret, frame = self.cap.read()
-            if not ret:
-                raise RuntimeError("Failed to capture frame from camera.")
-
-            frame = cv2.flip(frame, 1)
-
-            return ret, frame
-
-        except Exception as e:
-            logger.error("Error capturing image: %s", e)
-            raise 
-
     def __exit__(self, exc_type, exc_value, traceback) -> None:
         if self.cap is not None:
             self.cap.release()
@@ -307,33 +293,37 @@ class DataAcquisitionManager():
             try:
                 self._running = True
                 while self._running:
+                    try:
+                        ret, frame = camera_manager.cap.read()
+                        if not ret:
+                            raise RuntimeError("Failed to capture frame from camera.")
+                        
+                        frame = cv2.flip(frame, 1)
 
-                    ret, frame = camera_manager.get_frame()
-                    if not ret:
-                        logger.error("Error capturing frame from camera %d", camera_manager.config.camera_index)
-                        break
+                        timestamp = datetime.now(timezone.utc)
+                        filepath = self.filepath_manager.get_filepath(timestamp)
+                        meta_data = ImageMetaData(
+                            session_id = self.session_id,
+                            camera_index = self.camera_manager.config.camera_index,
+                            timestamp = timestamp,
+                            filepath = filepath)
+                        
+                        image = Image(frame, meta_data)
 
-                    timestamp = datetime.now(timezone.utc)
+                        image.save(image_save_dirpath)
+                        for writer in writers:
+                            try:
+                                writer.write_data(meta_data)
+                            except Exception as e:
+                                logger.error("Failed to write data: %s", e)
 
-                    filepath = self.filepath_manager.get_filepath(timestamp)
-                    meta_data = ImageMetaData(
-                        session_id = self.session_id,
-                        camera_index = self.camera_manager.config.camera_index,
-                        timestamp = timestamp,
-                        filepath = filepath)
-                    image = Image(frame, meta_data)
+                        # 次のフレーム取得までの時間を計算し、必要ならスリープ
+                        time.sleep(max(0, next_frame_time - time.time()))  # スリープ時間が負でないか確認
+                        next_frame_time += sleep_time  # 次のフレーム取得時間を更新
 
-                    image.save(image_save_dirpath)
-
-                    for writer in writers:
-                        try:
-                            writer.write_data(meta_data)
-                        except Exception as e:
-                            logger.error("Failed to write data: %s", e)
-
-                    # 次のフレーム取得までの時間を計算し、必要ならスリープ
-                    time.sleep(max(0, next_frame_time - time.time()))  # スリープ時間が負でないか確認
-                    next_frame_time += sleep_time  # 次のフレーム取得時間を更新
+                    except Exception as e:
+                        logger.error("Error capturing image: %s", e)
+                        raise
 
             except Exception as e:
                 logger.error("Error during acquisition: %s", e)
