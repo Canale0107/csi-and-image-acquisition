@@ -1,11 +1,11 @@
 import os
-import re
 import csv
 import time
 import logging
+from pathlib import Path
 from typing import List
 from datetime import datetime, timezone
-from concurrent.futures import ThreadPoolExecutor
+import asyncio
 from contextlib import ExitStack
 import traceback
 import yaml
@@ -42,7 +42,7 @@ class ImageMetaData():
         hour = self.acquisition_datetime.strftime("%H")
         minute = self.acquisition_datetime.strftime("%M")
         second = self.acquisition_datetime.strftime("%S")
-        parent_dir = os.path.join('camera' + str(self.camera_config.camera_index), date, hour, minute, second)
+        parent_dir = Path('camera' + str(self.camera_config.camera_index)) / date / hour / minute / second
         return parent_dir
 
     def _get_filepath(self):
@@ -224,7 +224,6 @@ class DataAcquisitionManager():
         self.camera_manager = camera_manager
         self.db_manager = db_manager
         self.csv_manager = csv_manager
-        self.executor = ThreadPoolExecutor(max_workers=3)  # スレッド数の上限を指定
 
     def start_acquisition(self):
         """ データ取得の開始 """
@@ -241,24 +240,16 @@ class DataAcquisitionManager():
             next_frame_time = time.time() + sleep_time  # 最初のフレーム取得時間を設定
 
             while True:
-                start_time = time.time()  # ループの開始時間を記録
-
                 ret, image = camera_manager.get_image()
                 if not ret:
                     logger.error(f"Error capturing frame from camera {camera_manager.config.camera_index}")
                     break
 
-                # 各処理を並列実行
-                futures = []
-                futures.append(self.executor.submit(image.save, image_save_dirpath))  # 画像の保存
+                image.save(image_save_dirpath)
                 if self.config.save_to_csv:
-                    futures.append(self.executor.submit(csv_manager.write_data, image))  # CSV書き込み
+                    csv_manager.write_data(image)
                 if self.config.send_to_db:
-                    futures.append(self.executor.submit(db_manager.write_data, image))  # DB書き込み
-
-                # 全ての処理が完了するのを待つ
-                for future in futures:
-                    future.result()
+                    db_manager.write_data(image)
 
                 logger.info(f"Image saved and metadata written for {image.meta_data.filepath}")
 
@@ -291,7 +282,7 @@ def main():
     config, camera_config, db_config = load_configs()
 
     session_id = 'session_' + datetime.now().strftime("%Y%m%d_%H%M%S")
-    csv_filepath = os.path.join(config.data_dirpath, session_id, 'meta_data.csv')
+    csv_filepath = Path(config.data_dirpath) / session_id / 'meta_data.csv'
 
     camera_manager = CameraManager(camera_config)
     db_manager = DBManager(db_config, session_id)
