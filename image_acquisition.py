@@ -3,6 +3,7 @@ import io
 import csv
 import time
 import logging
+import threading
 from pathlib import Path
 from typing import Tuple, List, Any
 from datetime import datetime, timezone
@@ -33,7 +34,6 @@ class CameraConfig(BaseModel):
 
 
 class FilePathManager():
-
     def __init__(self, session_id: str, camera_index: int) -> None:
         self.session_id = session_id
         self.camera_index = camera_index
@@ -45,7 +45,7 @@ class FilePathManager():
         date = timestamp.strftime("%Y-%m-%d")
         hour = timestamp.strftime("%H")
         minute = timestamp.strftime("%M")
-        parent_dir = Path(self.session_id) / 'image' / ('camera' + str(self.camera_index)) / date / hour / minute
+        parent_dir = Path(self.session_id) / ('camera' + str(self.camera_index)) / date / hour / minute
         return parent_dir
 
     def get_filepath(self, timestamp) -> Path:
@@ -260,12 +260,13 @@ class DataAcquisitionConfig(BaseModel):
 class DataAcquisitionManager():
     def __init__(self, config: DataAcquisitionConfig, session_id: str,
                 camera_manager: CameraManager, filepath_manager: FilePathManager,
-                data_managers: List[DataManager]) -> None:
+                data_managers: List[DataManager], stop_event: threading.Event) -> None:
         self.config = config
         self.session_id = session_id
         self.camera_manager = camera_manager
         self.filepath_manager = filepath_manager
         self.data_managers = data_managers
+        self.stop_event = stop_event
         self._running = False
 
     def stop_acquisition(self) -> None:
@@ -292,7 +293,7 @@ class DataAcquisitionManager():
 
             try:
                 self._running = True
-                while self._running:
+                while self._running and not self.stop_event.is_set():
                     try:
                         ret, frame = camera_manager.cap.read()
                         if not ret:
@@ -339,7 +340,7 @@ def load_configs() -> Tuple[DataAcquisitionConfig, CameraConfig, DBConfig]:
             config = yaml.safe_load(file)
 
         data_acquisition_config = DataAcquisitionConfig.parse_obj(config['data_acquisition'])
-        camera_config = CameraConfig.parse_obj(config['camera'])
+        camera_configs = [CameraConfig.parse_obj(cam_config) for cam_config in config['camera']]
         db_config = DBConfig.parse_obj(config['db'])
 
     except FileNotFoundError as e:
@@ -354,19 +355,12 @@ def load_configs() -> Tuple[DataAcquisitionConfig, CameraConfig, DBConfig]:
         logger.error("Configuration validation error: %s", e)
         raise
 
-    return data_acquisition_config, camera_config, db_config
+    return data_acquisition_config, camera_configs, db_config
 
 
-def main() -> None:
-    try:
-        data_acquisition_config, camera_config, db_config = load_configs()
-
-    except Exception as e:
-        logger.error("Failed to load configs: %s", e)
-        return
-
-    session_id = 'session_' + datetime.now().strftime("%Y%m%d_%H%M%S")
-    csv_filepath = Path(data_acquisition_config.data_dirpath) / session_id / 'meta_data.csv'
+def run_acquisition_for_camera(camera_config: CameraConfig, data_acquisition_config: DataAcquisitionConfig, db_config: DBConfig, session_id: str, stop_event: threading.Event) -> None:
+    """ カメラごとにデータ取得を行う """
+    csv_filepath = Path(data_acquisition_config.data_dirpath) / session_id / f'camera{camera_config.camera_index}' / 'meta_data.csv'
 
     try:
         camera_manager = CameraManager(camera_config)
@@ -375,7 +369,7 @@ def main() -> None:
         filepath_manager = FilePathManager(session_id, camera_config.camera_index)
 
     except Exception as e:
-        logger.error("Initialization failed: %s", e)
+        logger.error("Initialization failed for camera %d: %s", camera_config.camera_index, e)
         raise
 
     data_managers = []
@@ -386,18 +380,50 @@ def main() -> None:
     if data_acquisition_config.send_to_db:
         data_managers.append(db_manager)
 
-    data_acquisition_manager = DataAcquisitionManager(data_acquisition_config, session_id, camera_manager, filepath_manager, data_managers)
+    data_acquisition_manager = DataAcquisitionManager(data_acquisition_config, session_id, camera_manager, filepath_manager, data_managers, stop_event)
 
     try:
         data_acquisition_manager.start_acquisition()
 
-    except KeyboardInterrupt:
-        logger.info("Shutting down data acquisition.")
-        data_acquisition_manager.stop_acquisition()
+    except Exception as e:
+        logger.error("Acquisition error for camera %d: %s", camera_config.camera_index, e)
+        raise
+
+
+def main() -> None:
+    try:
+        data_acquisition_config, camera_configs, db_config = load_configs()
 
     except Exception as e:
-        logger.error("Acquisition error: %s", e)
-        raise
+        logger.error("Failed to load configs: %s", e)
+        return
+
+    session_id = 'session_' + datetime.now().strftime("%Y%m%d_%H%M%S")
+    stop_event = threading.Event()
+    threads = []
+
+    for camera_config in camera_configs:
+        thread = threading.Thread(
+            target=run_acquisition_for_camera,
+            args=(camera_config, data_acquisition_config, db_config, session_id, stop_event)
+        )
+        threads.append(thread)
+
+    for thread in threads:
+        thread.start()
+
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        logger.info("Shutting down all camera acquisitions.")
+        stop_event.set()  # Signal all threads to stop
+
+    for thread in threads:
+        thread.join()
+
+    logger.info("All camera acquisitions have completed.")
+
 
 if __name__ == "__main__":
     main()

@@ -4,10 +4,14 @@ data_acquisition:
   send_to_db: true
 
 camera:
-  camera_index: 0
-  width: 320
-  height: 240
-  fps: 30
+  - camera_index: 0
+    width: 320
+    height: 240
+    fps: 30
+  - camera_index: 1
+    width: 320
+    height: 240
+    fps: 30
 
 db:
   url: 'http://localhost:8086'
