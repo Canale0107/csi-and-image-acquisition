@@ -78,7 +78,6 @@ class DataAcquisitionManager():
                     try:
                         image = self.capture_frame()  # フレームをキャプチャ
                         self.save_image(image, writers)  # イメージを保存
-
                         # 次のフレーム取得までの時間を計算し、必要ならスリープ
                         time.sleep(max(0, next_frame_time - time.time()))  # スリープ時間が負でないか確認
                         next_frame_time += sleep_time  # 次のフレーム取得時間を更新
@@ -88,7 +87,7 @@ class DataAcquisitionManager():
                         break  # エラー時にループを抜ける
 
             finally:
-                logger.info("Acquisition stopped.")
+                logger.info("Acquisition stopped.") 
 
 
 def initialize_managers(camera_config: CameraConfig,
@@ -107,13 +106,14 @@ def initialize_managers(camera_config: CameraConfig,
 
 def get_data_managers(data_acquisition_config: DataAcquisitionConfig, 
                       csv_manager: DataManager,
-                      influxdb_manager: DataManager):
-    data_managers = []
-    if data_acquisition_config.save_to_csv:
-        data_managers.append(csv_manager)
-    if data_acquisition_config.send_to_db:
-        data_managers.append(influxdb_manager)
-    return data_managers
+                      influxdb_manager: DataManager) -> List[DataManager]:
+    return [
+        manager for manager, enabled in zip(
+            [csv_manager, influxdb_manager],
+            [data_acquisition_config.save_to_csv, data_acquisition_config.send_to_db]
+        )
+        if enabled
+    ]
 
 
 def run_acquisition_for_camera(camera_config: CameraConfig,
