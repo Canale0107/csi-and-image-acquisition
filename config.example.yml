@@ -13,7 +13,7 @@ camera:
     height: 240
     fps: 30
 
-db:
+influxdb:
   url: 'http://localhost:8086'
   token: '<your_db_token>'
   org: '<your_org>'
