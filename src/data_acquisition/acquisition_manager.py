@@ -44,7 +44,8 @@ class DataAcquisitionManager():
         )
         return FrameWithMetaData(frame, meta_data)
 
-    def save_and_write_frame(self, frame_with_meta_data: FrameWithMetaData, writers: List[DataWriter]) -> None:
+    def save_and_write_frame(self, frame_with_meta_data: FrameWithMetaData, 
+                             writers: List[DataWriter]) -> None:
         """ イメージを保存し、データを書き込む """
         frame_with_meta_data.save(self.config.data_dirpath)
         for writer in writers:
