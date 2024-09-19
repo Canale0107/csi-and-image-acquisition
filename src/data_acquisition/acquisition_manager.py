@@ -91,7 +91,9 @@ class DataAcquisitionManager():
                 logger.info("Acquisition stopped.")
 
 
-def initialize_managers(camera_config, influxdb_config, session_id, csv_filepath):
+def initialize_managers(camera_config: CameraConfig,
+                        influxdb_config: InfluxDBConfig,
+                        session_id: str, csv_filepath: Path):
     try:
         camera_manager = CameraManager(camera_config)
         csv_manager = CSVManager(csv_filepath)
@@ -103,7 +105,9 @@ def initialize_managers(camera_config, influxdb_config, session_id, csv_filepath
         raise
 
 
-def get_data_managers(data_acquisition_config, csv_manager, influxdb_manager):
+def get_data_managers(data_acquisition_config: DataAcquisitionConfig, 
+                      csv_manager: DataManager,
+                      influxdb_manager: DataManager):
     data_managers = []
     if data_acquisition_config.save_to_csv:
         data_managers.append(csv_manager)

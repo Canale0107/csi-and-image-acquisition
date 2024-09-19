@@ -2,6 +2,7 @@ import io
 import os
 import csv
 import logging
+from pathlib import Path
 
 from src.camera.image import ImageMetaData
 from src.writers import DataWriter, DataManager
@@ -29,7 +30,7 @@ class CSVWriter(DataWriter):
 
 
 class CSVManager(DataManager):
-    def __init__(self, filepath: str) -> None:
+    def __init__(self, filepath: Path) -> None:
         self.filepath = filepath
         self.file = None
         self.writer = None
