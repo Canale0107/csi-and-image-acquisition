@@ -11,7 +11,7 @@ import cv2
 from src.config import DataAcquisitionConfig, CameraConfig, InfluxDBConfig
 from src.camera import CameraManager, Image, ImageMetaData
 from src.data_acquisition.file_manager import FilePathManager
-from src.writers import DataWriter, DataManager, CSVManager, InfluxDBManager
+from src.writers import DataWriter, WriterManager, CSVManager, InfluxDBManager
 
 
 logger = logging.getLogger(__name__)
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 class DataAcquisitionManager():
     def __init__(self, config: DataAcquisitionConfig, session_id: str,
                  camera_manager: CameraManager, filepath_manager: FilePathManager,
-                 data_managers: List[DataManager], stop_event: threading.Event) -> None:
+                 data_managers: List[WriterManager], stop_event: threading.Event) -> None:
         self.config = config
         self.session_id = session_id
         self.camera_manager = camera_manager
@@ -105,8 +105,8 @@ def initialize_managers(camera_config: CameraConfig,
 
 
 def get_data_managers(data_acquisition_config: DataAcquisitionConfig, 
-                      csv_manager: DataManager,
-                      influxdb_manager: DataManager) -> List[DataManager]:
+                      csv_manager: WriterManager,
+                      influxdb_manager: WriterManager) -> List[WriterManager]:
     return [
         manager for manager, enabled in zip(
             [csv_manager, influxdb_manager],

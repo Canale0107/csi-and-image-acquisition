@@ -1,13 +1,13 @@
 """
 This module defines abstract base classes for managing the writing of metadata
-from image acquisition processes. It includes the `DataWriter` and `DataManager` 
+from image acquisition processes. It includes the `DataWriter` and `WriterManager` 
 classes, which outline the structure for writing metadata to various destinations 
 and managing writer instances.
 
 Classes:
 - DataWriter: An abstract base class for writing metadata from image acquisition 
               to different storage backends.
-- DataManager: An abstract base class for managing and providing instances of 
+- WriterManager: An abstract base class for managing and providing instances of 
                `DataWriter`, including context management for resource handling.
 """
 
@@ -39,7 +39,7 @@ class DataWriter(ABC):
         """
 
 
-class DataManager(ABC):
+class WriterManager(ABC):
     """
     Abstract base class for managing `DataWriter` instances and handling resource 
     management through context management (`__enter__` and `__exit__` methods).

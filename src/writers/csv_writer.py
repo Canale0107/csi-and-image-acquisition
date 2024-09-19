@@ -5,7 +5,7 @@ import logging
 from pathlib import Path
 
 from src.camera.image import ImageMetaData
-from src.writers import DataWriter, DataManager
+from src.writers import DataWriter, WriterManager
 
 
 logger = logging.getLogger(__name__)
@@ -29,7 +29,7 @@ class CSVWriter(DataWriter):
         self.writer.writerow(meta_data)
 
 
-class CSVManager(DataManager):
+class CSVManager(WriterManager):
     def __init__(self, filepath: Path) -> None:
         self.filepath = filepath
         self.file = None
