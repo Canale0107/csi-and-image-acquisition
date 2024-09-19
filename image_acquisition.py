@@ -53,10 +53,10 @@ class ImageMetaData():
     def _get_filepath(self) -> Path:
         # 親ディレクトリを取得
         parent_dir = self._get_parent_dir()
-        
+
         # 現在の秒を取得
         current_second = self.acquisition_datetime.strftime("%S")
-        
+
         # 秒が変わったら連番をリセット
         if ImageMetaData.current_second != current_second:
             ImageMetaData.image_counter = 0  # 連番をリセット
@@ -108,13 +108,13 @@ class CameraManager():
         if not self.cap.isOpened():
             raise ValueError(f"Camera {self.config.camera_index} cannot be opened.")
         return self
-    
+
     def get_image(self) -> Tuple[bool, Image]:
         try:
             ret, frame = self.cap.read()
             if not ret:
                 raise RuntimeError("Failed to capture frame from camera.")
-            
+
             acquisition_datetime = datetime.now(timezone.utc)
             meta_data = ImageMetaData(self.config, acquisition_datetime)
 
@@ -216,7 +216,7 @@ class DBManager:
                                         .time(timestamp, WritePrecision.NS)
             self.write_api.write(bucket=self.config.bucket, record=point)
             logger.info("Data written to DB: %s", point)
-        
+
         except Exception as e:
             logger.error("Error occured while writing data to DB: %s", e)
             raise
@@ -227,11 +227,11 @@ class DBManager:
             try:
                 self.write_api.flush()  # バッチデータを送信
                 self.write_api.close()  # write_apiを閉じる
-            
+
             except Exception as e:
                 logger.error("Error while closing write API: %s", e)
                 return False
-        
+
         if self.client is not None:
             self.client.close()
 
@@ -297,7 +297,7 @@ def load_configs() -> Tuple[DataAcquisitionConfig, CameraConfig, DBConfig]:
     try:
         with open("config.yml", "r", encoding='utf-8') as file:
             config = yaml.safe_load(file)
-            
+
         data_acquisition_config = DataAcquisitionConfig.parse_obj(config['data_acquisition'])
         camera_config = CameraConfig.parse_obj(config['camera'])
         db_config = DBConfig.parse_obj(config['db'])
@@ -309,7 +309,7 @@ def load_configs() -> Tuple[DataAcquisitionConfig, CameraConfig, DBConfig]:
     except yaml.YAMLError as e:
         logger.error("Error parsing YAML file: %s", e)
         raise
-    
+
     except ValidationError as e:
         logger.error("Configuration validation error: %s", e)
         raise
