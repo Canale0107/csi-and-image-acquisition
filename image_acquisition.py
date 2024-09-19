@@ -31,54 +31,51 @@ class CameraConfig(BaseModel):
     fps: int
 
 
-class ImageMetaData():
-    image_counter = 0  # クラス変数で連番を管理
-    current_second = None  # 現在の秒を保持
+class FilePathManager():
 
-    def __init__(self, session_id: str, camera_index: int, timestamp: datetime) -> None:
+    def __init__(self, session_id: str, camera_index: int) -> Path:
         self.session_id = session_id
         self.camera_index = camera_index
-        self.timestamp = timestamp
-        self.filepath = self._get_filepath()
+        self.image_counter = 0
+        self.current_second = None
 
-    def to_dict(self):
-        return {
-            "session_id": str(self.session_id),
-            "camera_index": int(self.camera_index),
-            "filepath": str(self.filepath), 
-            "timestamp": self.timestamp
-        }
-
-    def _get_parent_dir(self) -> Path:
+    def _get_parent_dir(self, timestamp) -> Path:
         """親ディレクトリを取得する（例：日付を親ディレクトリとする）"""
-        date = self.timestamp.strftime("%Y-%m-%d")
-        hour = self.timestamp.strftime("%H")
-        minute = self.timestamp.strftime("%M")
-        second = self.timestamp.strftime("%S")
+        date = timestamp.strftime("%Y-%m-%d")
+        hour = timestamp.strftime("%H")
+        minute = timestamp.strftime("%M")
+        second = timestamp.strftime("%S")
         parent_dir = Path(self.session_id) / 'image' / ('camera' + str(self.camera_index)) / date / hour / minute / second
         return parent_dir
 
-    def _get_filepath(self) -> Path:
+    def get_filepath(self, timestamp) -> Path:
         # 親ディレクトリを取得
-        parent_dir = self._get_parent_dir()
+        parent_dir = self._get_parent_dir(timestamp)
 
         # 現在の秒を取得
-        current_second = self.timestamp.strftime("%S")
+        current_second = timestamp.strftime("%S")
 
         # 秒が変わったら連番をリセット
-        if ImageMetaData.current_second != current_second:
-            ImageMetaData.image_counter = 0  # 連番をリセット
-            ImageMetaData.current_second = current_second  # 秒を更新
+        if self.current_second != current_second:
+            self.image_counter = 0  # 連番をリセット
+            self.current_second = current_second  # 秒を更新
         else:
-            ImageMetaData.image_counter += 1  # 連番をインクリメント
+            self.image_counter += 1  # 連番をインクリメント
 
         # ファイル名を連番付きで生成
         filename = (f'camera{self.camera_index}_'
-                    f'{self.timestamp.strftime("%Y-%m-%d_%H-%M-%S")}_'
-                    f'{ImageMetaData.image_counter}.jpg')
+                    f'{timestamp.strftime("%Y-%m-%d_%H-%M-%S")}_'
+                    f'{self.image_counter}.jpg')
 
         filepath = Path(parent_dir) / filename
         return filepath
+
+
+class ImageMetaData(BaseModel):
+    session_id: str
+    camera_index: int
+    timestamp: datetime
+    filepath: Path
 
 
 class Image():
@@ -139,8 +136,8 @@ class CameraManager():
 
 class DataWriter(ABC):
     @abstractmethod
-    def write_data(self, data: Any) -> None:
-        """データを適切な書き込み先に保存する抽象メソッド"""
+    def write_data(self, meta_data: Any) -> None:
+        """メタデータを適切な書き込み先に保存する抽象メソッド"""
         pass
 
 
@@ -155,12 +152,18 @@ class CSVWriter(DataWriter):
         self.writer = csv.DictWriter(file, fieldnames=['session_id', 'camera_index', 'filepath', 'timestamp'])
         self.writer.writeheader()
 
-    def write_data(self, data: dict) -> None:
+    def write_data(self, meta_data: ImageMetaData) -> None:
         """ CSVにデータを書き込む """
-        if isinstance(data.get('timestamp'), datetime):
-            data['timestamp'] = data['timestamp'].timestamp()
-        self.writer.writerow(data)
-        logger.info("Data written to CSV: %s", data)
+
+        meta_data = {
+            "session_id": str(meta_data.session_id),
+            "camera_index": int(meta_data.camera_index),
+            "timestamp": float(meta_data.timestamp.timestamp()),
+            "filepath": str(meta_data.filepath)
+        }
+
+        self.writer.writerow(meta_data)
+        logger.info("Data written to CSV: %s", meta_data)
 
 
 class CSVManager(DataManager):
@@ -205,16 +208,17 @@ class InfluxDBWriter(DataWriter):
         self.write_api = write_api
         self.bucket = bucket
 
-    def write_data(self, data: dict) -> None:
+    def write_data(self, meta_data: ImageMetaData) -> None:
         """ InfluxDBにデータを書き込む """
 
-        assert isinstance(data.get('timestamp'), datetime), \
-            f"Expected timestamp to be datetime, but got {type(data.get('timestamp'))}"
+        assert isinstance(meta_data.timestamp, datetime), \
+            f"Expected timestamp to be datetime, but got {type(meta_data.get('timestamp'))}"
 
-        point = Point("IMAGE_DATA").tag("session_id", data["session_id"]) \
-                                    .tag("camera_index", data["camera_index"]) \
-                                    .field("filepath", data["filepath"]) \
-                                    .time(data["timestamp"], WritePrecision.NS)
+        point = (Point("IMAGE_DATA").tag("session_id", str(meta_data.session_id))
+                                    .tag("camera_index", int(meta_data.camera_index))
+                                    .field("filepath", str(meta_data.filepath))
+                                    .time(meta_data.timestamp, WritePrecision.NS)
+        )
         self.write_api.write(bucket=self.bucket, record=point)
         logger.info("Data written to DB: %s", point)
 
@@ -270,10 +274,11 @@ class DataAcquisitionConfig(BaseModel):
 
 class DataAcquisitionManager():
     def __init__(self, config: DataAcquisitionConfig, session_id: str,
-                camera_manager: CameraManager) -> None:
+                camera_manager: CameraManager, filepath_manager = FilePathManager) -> None:
         self.config = config
         self.session_id = session_id
         self.camera_manager = camera_manager
+        self.filepath_manager = filepath_manager
         self._running = False
 
     def stop_acquisition(self) -> None:
@@ -309,16 +314,18 @@ class DataAcquisitionManager():
 
                     timestamp = datetime.now(timezone.utc)
 
+                    filepath = self.filepath_manager.get_filepath(timestamp)
                     meta_data = ImageMetaData(
-                        self.session_id, 
-                        self.camera_manager.config.camera_index,
-                        timestamp)
+                        session_id = self.session_id,
+                        camera_index = self.camera_manager.config.camera_index,
+                        timestamp = timestamp,
+                        filepath = filepath)
                     image = Image(frame, meta_data)
 
                     image.save(image_save_dirpath)
 
                     for writer in writers:
-                        writer.write_data(meta_data.to_dict())
+                        writer.write_data(meta_data)
 
                     # 次のフレーム取得までの時間を計算し、必要ならスリープ
                     time.sleep(max(0, next_frame_time - time.time()))  # スリープ時間が負でないか確認
@@ -371,12 +378,13 @@ def main() -> None:
         camera_manager = CameraManager(camera_config)
         csv_manager = CSVManager(csv_filepath)
         db_manager = DBManager(db_config, session_id)
+        filepath_manager = FilePathManager(session_id, camera_config.camera_index)
 
     except Exception as e:
         logger.error("Initialization failed: %s", e)
         raise
 
-    data_acquisition_manager = DataAcquisitionManager(config, session_id, camera_manager)
+    data_acquisition_manager = DataAcquisitionManager(config, session_id, camera_manager, filepath_manager)
 
     try:
         data_managers = []
