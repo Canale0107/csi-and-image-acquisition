@@ -42,11 +42,11 @@ class DataAcquisitionManager():
         return meta_data
 
     def save_meta_data(self, frame_with_meta_data: FrameWithMetaData, 
-                             writers: List[DataWriter]) -> None:
+                             data_writers: List[DataWriter]) -> None:
         """ イメージを保存し、データを書き込む """
-        for writer in writers:
+        for data_writer in data_writers:
             try:
-                writer.write_data(frame_with_meta_data.meta_data)
+                data_writer.write_data(frame_with_meta_data.meta_data)
             except Exception as e:
                 logger.error("Failed to write data: %s", e)
                 traceback.print_exc()  # エラーメッセージを表示
@@ -59,10 +59,8 @@ class DataAcquisitionManager():
     def start_acquisition(self) -> None:
         """ データ取得の開始 """
         with ExitStack() as stack:
-            camera_manager = stack.enter_context(self.camera_manager)
-            frame_reader = camera_manager.get_reader()
-
-            writers = [stack.enter_context(dm).get_writer() for dm in self.data_managers]
+            frame_reader = stack.enter_context(self.camera_manager).get_reader()
+            data_writers = [stack.enter_context(dm).get_writer() for dm in self.data_managers]
 
             # カメラのFPSに基づいてスリープ時間を計算 (秒)
             fps = self.camera_manager.config.fps
@@ -76,7 +74,7 @@ class DataAcquisitionManager():
                         logger.info('meta_data: %s', meta_data)
                         frame_with_meta_data = frame_reader.read_frame(meta_data)
                         frame_with_meta_data.save_frame(self.config.data_dirpath)
-                        self.save_meta_data(frame_with_meta_data, writers)
+                        self.save_meta_data(frame_with_meta_data, data_writers)
 
                         # 次のフレーム取得までの時間を計算し、必要ならスリープ
                         time.sleep(max(0, next_frame_time - time.time()))  # スリープ時間が負でないか確認
