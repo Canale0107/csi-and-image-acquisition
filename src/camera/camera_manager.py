@@ -17,24 +17,29 @@ class CameraManager():
 
     def __enter__(self) -> 'CameraManager':
 
-        logger.info("Opening camera with index %s.", self.config.camera_index)
-        self.cap = cv2.VideoCapture(self.config.camera_index)
+        index = self.config.camera_index
+        logger.info("Opening camera with index %s.", index)
+        self.cap = cv2.VideoCapture(index)
 
         # 解像度を指定
-        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.config.width)
-        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.config.height)
+        width = self.config.width
+        height = self.config.height
+        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
 
-        logger.info("Setting camera resolution to %s.", f'{self.config.width}x{self.config.height}')
+        resolution = f'{width}x{height}
+        logger.info("Setting camera %d resolution to %s.", index, resolution)
 
         # FPSを指定
-        self.cap.set(cv2.CAP_PROP_FPS, self.config.fps)
-        logger.info("Setting camera FPS to %s.", self.config.fps)
+        fps = self.config.fps
+        self.cap.set(cv2.CAP_PROP_FPS, fps)
+        logger.info("Setting camera FPS to %s.", fps)
 
         if not self.cap.isOpened():
-            logger.error("Failed to open camera %s.", self.config.camera_index)
-            raise ValueError("Camera %d cannot be opened.", self.config.camera_index)
+            logger.error("Failed to open camera %s.", index)
+            raise ValueError("Camera %d cannot be opened.", index)
 
-        logger.info("Camera %s successfully opened.", self.config.camera_index)
+        logger.info("Camera %s successfully opened.", index)
         return self
 
     def __exit__(self, exc_type, exc_value, traceback) -> None:
