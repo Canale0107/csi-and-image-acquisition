@@ -3,8 +3,8 @@ import logging
 import threading
 from datetime import datetime
 
-from src.config.config_loader import load_configs
-from src.data_acquisition.acquisition_manager import run_acquisition_for_camera
+from src.config import load_configs
+from src.data_acquisition import run_acquisition_for_camera
 
 
 logger = logging.getLogger(__name__)
