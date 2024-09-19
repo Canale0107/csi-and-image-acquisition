@@ -41,7 +41,7 @@ def load_configs() -> Tuple[DataAcquisitionConfig, CameraConfig, InfluxDBConfig]
 
         data_acquisition_config = DataAcquisitionConfig.parse_obj(config['data_acquisition'])
         camera_configs = [CameraConfig.parse_obj(cam_config) for cam_config in config['camera']]
-        db_config = InfluxDBConfig.parse_obj(config['db'])
+        influxdb_config = InfluxDBConfig.parse_obj(config['influxdb'])
 
     except FileNotFoundError as e:
         logger.error("Configuration file not found: %s", e)
@@ -55,4 +55,4 @@ def load_configs() -> Tuple[DataAcquisitionConfig, CameraConfig, InfluxDBConfig]
         logger.error("Configuration validation error: %s", e)
         raise
 
-    return data_acquisition_config, camera_configs, db_config
+    return data_acquisition_config, camera_configs, influxdb_config
