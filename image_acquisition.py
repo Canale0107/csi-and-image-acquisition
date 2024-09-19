@@ -202,12 +202,17 @@ class DBManager:
             self.write_api.write(bucket=self.config.bucket, record=point)
             logger.info(f"Data written to DB: {point}")
         except Exception as e:
-            logger.error(f"Failed to write to DB: {e}")
+            logger.error("Failed to write to DB: %s", e)
             logger.error(traceback.format_exc())
 
     def __exit__(self, exc_type, exc_value, traceback):
         """ データ取得終了時にデータベース接続を閉じる """
-        if self.client:
+        if self.write_api is not None:
+            try:
+                self.write_api.__del__()  # バッチのデータをすべて書き込む
+            except Exception as e:
+                logger.error("Error while closing write API: %s", e)
+        if self.client is not None:
             self.client.close()
 
 
@@ -224,6 +229,10 @@ class DataAcquisitionManager():
         self.camera_manager = camera_manager
         self.db_manager = db_manager
         self.csv_manager = csv_manager
+        self._running = False
+
+    def stop_acquisition(self):
+        self._running = False
 
     def start_acquisition(self):
         """ データ取得の開始 """
@@ -239,23 +248,27 @@ class DataAcquisitionManager():
             sleep_time = 1.0 / fps  # 1フレームの取得に要する時間 (秒)
             next_frame_time = time.time() + sleep_time  # 最初のフレーム取得時間を設定
 
-            while True:
-                ret, image = camera_manager.get_image()
-                if not ret:
-                    logger.error(f"Error capturing frame from camera {camera_manager.config.camera_index}")
-                    break
+            self._running = True
+            try:
+                while self._running:
+                    ret, image = camera_manager.get_image()
+                    if not ret:
+                        logger.error(f"Error capturing frame from camera {camera_manager.config.camera_index}")
+                        break
 
-                image.save(image_save_dirpath)
-                if self.config.save_to_csv:
-                    csv_manager.write_data(image)
-                if self.config.send_to_db:
-                    db_manager.write_data(image)
+                    image.save(image_save_dirpath)
+                    if self.config.save_to_csv:
+                        csv_manager.write_data(image)
+                    if self.config.send_to_db:
+                        db_manager.write_data(image)
 
-                logger.info(f"Image saved and metadata written for {image.meta_data.filepath}")
+                    logger.info(f"Image saved and metadata written for {image.meta_data.filepath}")
 
-                # 次のフレーム取得までの時間を計算し、必要ならスリープ
-                time.sleep(max(0, next_frame_time - time.time()))  # スリープ時間が負でないか確認
-                next_frame_time += sleep_time  # 次のフレーム取得時間を更新
+                    # 次のフレーム取得までの時間を計算し、必要ならスリープ
+                    time.sleep(max(0, next_frame_time - time.time()))  # スリープ時間が負でないか確認
+                    next_frame_time += sleep_time  # 次のフレーム取得時間を更新
+            except KeyboardInterrupt:
+                logger.info("Data acquisition interrupted by user.")
 
 
 def load_configs():
@@ -289,7 +302,12 @@ def main():
     csv_manager = CSVManager(csv_filepath)
 
     data_acquisition_manager = DataAcquisitionManager(config, session_id, camera_manager, db_manager, csv_manager)
-    data_acquisition_manager.start_acquisition()
+    
+    try:
+        data_acquisition_manager.start_acquisition()
+    except KeyboardInterrupt:
+        logger.info("Shutting down data acquisition.")
+        data_acquisition_manager.stop_acquisition()
 
 if __name__ == "__main__":
     main()
