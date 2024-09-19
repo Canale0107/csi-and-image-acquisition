@@ -1,0 +1,20 @@
+data_acquisition:
+  data_dirpath: './data'
+  save_to_csv: true
+  send_to_db: true
+
+camera:
+  - camera_index: 0
+    width: 320
+    height: 240
+    fps: 30
+  - camera_index: 1
+    width: 320
+    height: 240
+    fps: 30
+
+db:
+  url: 'http://localhost:8086'
+  token: '<your_db_token>'
+  org: '<your_org>'
+  bucket: '<your_bucket>'
