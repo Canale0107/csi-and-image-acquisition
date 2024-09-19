@@ -19,7 +19,7 @@ image-acquisition/
 │   │
 │   ├── data_acquisition/
 │   │   ├── acquisition_manager.py  # データ取得管理（DataAcquisitionManagerクラス、run_acquisition_for_camera関数）
-│   │   ├── file_manager.py         # ファイルパス管理（FilePathManagerクラス）
+│   │   └── file_manager.py         # ファイルパス管理（FilePathManagerクラス）
 │   │
 │   ├── writers/
 │   │   ├── abstract_writer.py      # 抽象クラス（DataWriter, DataManagerの抽象クラス）
