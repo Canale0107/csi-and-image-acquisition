@@ -7,6 +7,7 @@ from pydantic import BaseModel
 import numpy as np
 import cv2
 
+
 logger = logging.getLogger(__name__)
 
 
