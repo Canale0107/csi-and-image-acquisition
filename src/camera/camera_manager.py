@@ -33,7 +33,7 @@ class CameraManager():
         # FPSを指定
         fps = self.config.fps
         self.cap.set(cv2.CAP_PROP_FPS, fps)
-        logger.info("Setting camera FPS to %s.", fps)
+        logger.info("Setting camera %d FPS to %s.", index, fps)
 
         if not self.cap.isOpened():
             logger.error("Failed to open camera %s.", index)
