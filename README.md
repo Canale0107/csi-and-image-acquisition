@@ -15,7 +15,7 @@ image-acquisition/
 ├── src/
 │   ├── camera/
 │   │   ├── camera_manager.py       # カメラの管理（CameraManagerクラス）
-│   │   └── image.py                # 画像の保存やメタデータの管理（Imageクラス、ImageMetaDataクラス）
+│   │   └── image.py                # 画像の保存やメタデータの管理（MetaDataクラス、FrameWithMetaDataクラス）
 │   │
 │   ├── data_acquisition/
 │   │   ├── acquisition_manager.py  # データ取得管理（DataAcquisitionManagerクラス、run_acquisition_for_camera関数）
