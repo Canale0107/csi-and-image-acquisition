@@ -252,7 +252,6 @@ class DBManager(DataManager):
             raise RuntimeError("Not connected to DB.")
         return InfluxDBWriter(self.write_api, self.config.bucket)
 
-
     def __exit__(self, exc_type, exc_value, traceback) -> None:
         """ データ取得終了時にデータベース接続を閉じる """
         if self.write_api is not None:
@@ -304,10 +303,10 @@ class DataAcquisitionManager():
             sleep_time = 1.0 / fps  # 1フレームの取得に要する時間 (秒)
             next_frame_time = time.time() + sleep_time  # 最初のフレーム取得時間を設定
 
-            self._running = True
             try:
+                self._running = True
                 while self._running:
-                    
+
                     ret, frame = camera_manager.get_frame()
                     if not ret:
                         logger.error("Error capturing frame from camera %d", camera_manager.config.camera_index)
@@ -315,7 +314,10 @@ class DataAcquisitionManager():
 
                     timestamp = datetime.now(timezone.utc)
 
-                    meta_data = ImageMetaData(self.session_id, self.camera_manager.config.camera_index, timestamp)
+                    meta_data = ImageMetaData(
+                        self.session_id, 
+                        self.camera_manager.config.camera_index,
+                        timestamp)
                     image = Image(frame, meta_data)
 
                     image.save(image_save_dirpath)
@@ -326,9 +328,11 @@ class DataAcquisitionManager():
                     # 次のフレーム取得までの時間を計算し、必要ならスリープ
                     time.sleep(max(0, next_frame_time - time.time()))  # スリープ時間が負でないか確認
                     next_frame_time += sleep_time  # 次のフレーム取得時間を更新
+
             except Exception as e:
                 logger.error("Error during acquisition: %s", e)
                 raise  # エラーを再度上位層に投げる
+
             finally:
                 self.stop_acquisition()
 
@@ -360,6 +364,7 @@ def load_configs() -> Tuple[DataAcquisitionConfig, CameraConfig, DBConfig]:
 def main() -> None:
     try:
         config, camera_config, db_config = load_configs()
+
     except Exception as e:
         logger.error("Failed to load configs: %s", e)
         return
@@ -388,9 +393,11 @@ def main() -> None:
             data_managers.append(db_manager)
 
         data_acquisition_manager.start_acquisition(data_managers)
+
     except KeyboardInterrupt:
         logger.info("Shutting down data acquisition.")
         data_acquisition_manager.stop_acquisition()
+
     except Exception as e:
         logger.error("Acquisition error: %s", e)
         raise
