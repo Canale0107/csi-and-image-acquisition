@@ -40,7 +40,7 @@ def load_configs() -> Tuple[DataAcquisitionConfig, CameraConfig, InfluxDBConfig]
         logger.info("Loading configuration file: config.yml")
         with open("config.yml", "r", encoding='utf-8') as file:
             config = yaml.safe_load(file)
-        
+
         logger.info("Parsing data acquisition configuration.")
         data_acquisition_config = DataAcquisitionConfig.parse_obj(config['data_acquisition'])
         logger.info("Data acquisition config: %s", data_acquisition_config.dict())
