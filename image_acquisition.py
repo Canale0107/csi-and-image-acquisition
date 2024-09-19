@@ -35,13 +35,13 @@ class ImageMetaData():
     image_counter = 0  # クラス変数で連番を管理
     current_second = None  # 現在の秒を保持
 
-    def __init__(self, camera_config, acquisition_datetime):
+    def __init__(self, camera_config: CameraConfig, acquisition_datetime: datetime) -> None:
         self.camera_config = camera_config
         self.acquisition_datetime = acquisition_datetime
         self.resolution = f'{self.camera_config.width}x{self.camera_config.height}'
         self.filepath = self._get_filepath()
 
-    def _get_parent_dir(self):
+    def _get_parent_dir(self) -> Path:
         """親ディレクトリを取得する（例：日付を親ディレクトリとする）"""
         date = self.acquisition_datetime.strftime("%Y-%m-%d")
         hour = self.acquisition_datetime.strftime("%H")
@@ -50,7 +50,7 @@ class ImageMetaData():
         parent_dir = Path('camera' + str(self.camera_config.camera_index)) / date / hour / minute / second
         return parent_dir
 
-    def _get_filepath(self):
+    def _get_filepath(self) -> Path:
         # 親ディレクトリを取得
         parent_dir = self._get_parent_dir()
         
@@ -69,16 +69,17 @@ class ImageMetaData():
                     f'{self.acquisition_datetime.strftime("%Y-%m-%d_%H-%M-%S")}_'
                     f'{ImageMetaData.image_counter}.jpg')
 
-        filepath = os.path.join(parent_dir, filename)
+        filepath = Path(parent_dir) / filename
         return filepath
 
 
 class Image():
-    def __init__(self, frame: np.ndarray, meta_data: ImageMetaData):
+    def __init__(self, frame: np.ndarray, meta_data: ImageMetaData) -> None:
         self.frame = frame
         self.meta_data = meta_data
-    def save(self, image_save_dirpath):
-        filepath = os.path.join(image_save_dirpath, self.meta_data.filepath)
+
+    def save(self, image_save_dirpath: Path) -> None:
+        filepath = Path(image_save_dirpath) / self.meta_data.filepath
         # ディレクトリが存在しない場合は作成する
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
         cv2.imwrite(filepath, self.frame)
@@ -89,11 +90,11 @@ class CameraManager():
     """
     カメラの管理を行う
     """
-    def __init__(self, config: CameraConfig):
+    def __init__(self, config: CameraConfig) -> None:
         self.cap = None
         self.config = config
 
-    def __enter__(self):
+    def __enter__(self) -> 'CameraManager':
 
         self.cap = cv2.VideoCapture(self.config.camera_index)
 
@@ -121,33 +122,33 @@ class CameraManager():
             image = Image(frame, meta_data)
 
             return ret, image
+
         except Exception as e:
             logger.error("Error capturing image: %s", e)
-            raise  # エラーを上位に投げる
+            raise 
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self, exc_type, exc_value, traceback) -> None:
         if self.cap is not None:
             self.cap.release()
         cv2.destroyAllWindows()
 
 
 class CSVManager:
-    def __init__(self, filepath):
+    def __init__(self, filepath: str) -> None:
         self.filepath = filepath
         self.fieldnames = ['filepath', 'timestamp']
         self.file = None
         self.writer = None
 
-    def __enter__(self):
+    def __enter__(self) -> 'CSVManager':
         """ データ取得開始時にファイルを開いてCSV writerを初期化 """
-        # ディレクトリが存在しない場合は作成する
         os.makedirs(os.path.dirname(self.filepath), exist_ok=True)
         self.file = open(self.filepath, mode='w', newline='', encoding='utf-8')
         self.writer = csv.DictWriter(self.file, fieldnames=self.fieldnames)
         self.writer.writeheader()
         return self
 
-    def write_data(self, image):
+    def write_data(self, image: Image) -> None:
         """ 画像のメタデータをCSVファイルに書き込む """
         if self.writer:
             try:
@@ -160,7 +161,7 @@ class CSVManager:
                 logger.error("Error occured while writing to CSV: %s", e)
                 raise
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self, exc_type, exc_value, traceback) -> None:
         """ データ取得終了時にファイルを閉じる """
         if self.file:
             self.file.close()
@@ -172,20 +173,20 @@ class DBConfig(BaseModel):
     org: str
     bucket: str
 
-    def get_client(self):
+    def get_client(self) -> InfluxDBClient:
         """
         InfluxDBClientを取得するメソッド。
         """
         return InfluxDBClient(url=self.url, token=self.token, org=self.org)
 
 class DBManager:
-    def __init__(self, config: DBConfig, session_id):
+    def __init__(self, config: DBConfig, session_id: str) -> None:
         self.config = config
         self.session_id = session_id
         self.client = None
         self.write_api = None
 
-    def __enter__(self):
+    def __enter__(self) -> 'DBManager':
         """ データ取得開始時にデータベースに接続 """
         self.client = self.config.get_client()
         self.write_api = self.client.write_api()
@@ -200,13 +201,13 @@ class DBManager:
 
         return self
 
-    def write_data(self, image):
+    def write_data(self, image) -> None:
         """ 画像データのメタ情報をデータベースに書き込む """
         try:
             measurement = "IMAGE_DATA"
-            fields = {"filepath": image.meta_data.filepath}
-            tags = {"session_id": self.session_id,
-                    "camera_index": image.meta_data.camera_config.camera_index}
+            fields = {"filepath": str(image.meta_data.filepath)}
+            tags = {"session_id": str(self.session_id),
+                    "camera_index": int(image.meta_data.camera_config.camera_index)}
             timestamp = image.meta_data.acquisition_datetime
 
             point = Point(measurement).tag("session_id", tags["session_id"]) \
@@ -214,20 +215,23 @@ class DBManager:
                                         .field("filepath", fields["filepath"]) \
                                         .time(timestamp, WritePrecision.NS)
             self.write_api.write(bucket=self.config.bucket, record=point)
-            logger.info(f"Data written to DB: {point}")
+            logger.info("Data written to DB: %s", point)
+        
         except Exception as e:
             logger.error("Error occured while writing data to DB: %s", e)
             raise
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self, exc_type, exc_value, traceback) -> None:
         """ データ取得終了時にデータベース接続を閉じる """
         if self.write_api is not None:
             try:
                 self.write_api.flush()  # バッチデータを送信
                 self.write_api.close()  # write_apiを閉じる
+            
             except Exception as e:
                 logger.error("Error while closing write API: %s", e)
                 return False
+        
         if self.client is not None:
             self.client.close()
 
@@ -239,8 +243,8 @@ class DataAcquisitionConfig(BaseModel):
 
 
 class DataAcquisitionManager():
-    def __init__(self, config: DataAcquisitionConfig, session_id: str, 
-                camera_manager: CameraManager, db_manager: DBManager, csv_manager: CSVManager):
+    def __init__(self, config: DataAcquisitionConfig, session_id: str,
+                camera_manager: CameraManager, db_manager: DBManager, csv_manager: CSVManager) -> None:
         self.config = config
         self.session_id = session_id
         self.camera_manager = camera_manager
@@ -248,10 +252,10 @@ class DataAcquisitionManager():
         self.csv_manager = csv_manager
         self._running = False
 
-    def stop_acquisition(self):
+    def stop_acquisition(self) -> None:
         self._running = False
 
-    def start_acquisition(self):
+    def start_acquisition(self) -> None:
         """ データ取得の開始 """
 
         image_save_dirpath = os.path.join(self.config.data_dirpath, self.session_id, 'image')
@@ -289,7 +293,7 @@ class DataAcquisitionManager():
                 self.stop_acquisition()
 
 
-def load_configs():
+def load_configs() -> Tuple[DataAcquisitionConfig, CameraConfig, DBConfig]:
     try:
         with open("config.yml", "r", encoding='utf-8') as file:
             config = yaml.safe_load(file)
@@ -299,21 +303,21 @@ def load_configs():
         db_config = DBConfig.parse_obj(config['db'])
 
     except FileNotFoundError as e:
-        logger.error("Configuration file not found.")
+        logger.error("Configuration file not found: %s", e)
         raise
 
     except yaml.YAMLError as e:
-        logger.error(f"Error parsing YAML file: {e}")
+        logger.error("Error parsing YAML file: %s", e)
         raise
     
     except ValidationError as e:
-        logger.error(f"Configuration validation error: {e}")
+        logger.error("Configuration validation error: %s", e)
         raise
 
     return data_acquisition_config, camera_config, db_config
 
 
-def main():
+def main() -> None:
     try:
         config, camera_config, db_config = load_configs()
     except Exception as e:
