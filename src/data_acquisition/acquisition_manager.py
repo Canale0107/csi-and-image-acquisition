@@ -62,11 +62,7 @@ class DataAcquisitionManager():
             camera_manager = stack.enter_context(self.camera_manager)
             frame_reader = camera_manager.get_reader()
 
-            writers = []
-            for data_manager in self.data_managers:
-                data_manager = stack.enter_context(data_manager)
-                writer = data_manager.get_writer()
-                writers.append(writer)
+            writers = [stack.enter_context(dm).get_writer() for dm in self.data_managers]
 
             # カメラのFPSに基づいてスリープ時間を計算 (秒)
             fps = self.camera_manager.config.fps
