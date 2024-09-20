@@ -31,7 +31,6 @@ from datetime import datetime
 
 from yaml import YAMLError
 from pydantic import ValidationError
-from colorama import Fore, Style, init
 
 from src.config import load_configs
 from src.logger import setup_logger

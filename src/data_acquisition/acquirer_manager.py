@@ -11,7 +11,9 @@ logger = logging.getLogger(__name__)
 
 
 class DataAcquirer:
-    def __init__(self, meta_camera: MetaCamera, data_writers: List[DataWriter], filepath_manager: FilePathManager):
+    def __init__(self, meta_camera: MetaCamera, 
+                 data_writers: List[DataWriter], 
+                 filepath_manager: FilePathManager):
         self.meta_camera = meta_camera
         self.data_writers = data_writers
         self.filepath_manager = filepath_manager
@@ -30,10 +32,11 @@ class DataAcquirer:
 
 
 class DataAcquirerManager:
-    def __init__(self, config: DataAcquisitionConfig, session_id: str,
-                filepath_manager: FilePathManager,
-                meta_camera_manager: MetaCameraManager,
-                writer_managers: List[WriterManager]) -> None:
+    def __init__(self, config: DataAcquisitionConfig, 
+                 session_id: str,
+                 filepath_manager: FilePathManager,
+                 meta_camera_manager: MetaCameraManager,
+                 writer_managers: List[WriterManager]) -> None:
         self.config = config
         self.session_id = session_id
         self.filepath_manager = filepath_manager
