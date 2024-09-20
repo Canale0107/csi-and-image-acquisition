@@ -26,35 +26,34 @@ class CameraManager:
     """
     def __init__(self, config: CameraConfig) -> None:
         self.cap = None
-        self.config = config
+        self.index = config.camera_index
+        self.width = config.width
+        self.height = config.height
+        self.fps = config.fps
 
     def __enter__(self) -> 'CameraManager':
 
-        index = self.config.camera_index
-        logger.info("Opening camera with index %s.", index)
-        self.cap = cv2.VideoCapture(index)
+        logger.info("Opening camera with index %s.", self.index)
+        self.cap = cv2.VideoCapture(self.index)
 
         # 解像度を指定
-        width = self.config.width
-        height = self.config.height
-        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
+        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
 
-        resolution = f'{width}x{height}'
-        logger.info("Setting camera %d resolution to %s.", index, resolution)
+        resolution = f'{self.width}x{self.height}'
+        logger.info("Setting camera %d resolution to %s.", self.index, resolution)
 
         # FPSを指定
-        fps = self.config.fps
-        self.cap.set(cv2.CAP_PROP_FPS, fps)
-        logger.info("Setting camera %d FPS to %s.", index, fps)
+        self.cap.set(cv2.CAP_PROP_FPS, self.fps)
+        logger.info("Setting camera %d FPS to %s.", self.index, self.fps)
 
         if not self.cap.isOpened():
-            logger.error("Failed to open camera %s.", index)
-            raise ValueError("Camera %d cannot be opened.", index)
+            logger.error("Failed to open camera %s.", self.index)
+            raise ValueError("Camera %d cannot be opened.", self.index)
 
-        logger.info("Camera %s successfully opened.", index)
+        logger.info("Camera %s successfully opened.", self.index)
         return self
-    
+
     def get_reader(self) -> FrameReader:
         if self.cap is None:
             raise RuntimeError("Recording not started.")
@@ -62,7 +61,7 @@ class CameraManager:
 
     def __exit__(self, exc_type, exc_value, traceback) -> None:
         if self.cap is not None:
-            logger.info("Releasing camera %d.", self.config.camera_index)
+            logger.info("Releasing camera %d.", self.index)
             self.cap.release()
         cv2.destroyAllWindows()
-        logger.info("Camera and OpenCV resources cleaned up.")
+        logger.info("Camera %d and OpenCV resources cleaned up.", self.index)

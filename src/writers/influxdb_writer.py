@@ -44,7 +44,7 @@ class InfluxDBWriterManager(WriterManager):
         # データベース接続のテスト
         try:
             health = self.client.health()
-            logger.info("Database health: %s", health.status)
+            logger.info("Connected to InfluxDB, health: %s", health.status)
         except Exception as e:
             logger.error("Failed to connect to database: %s", e)
             raise
@@ -70,3 +70,5 @@ class InfluxDBWriterManager(WriterManager):
 
         if self.client is not None:
             self.client.close()
+
+            logger.info('InfluxDB closed.')

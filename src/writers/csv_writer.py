@@ -59,3 +59,5 @@ class CSVWriterManager(WriterManager):
         """ ファイルを閉じる """
         if self.file:
             self.file.close()
+
+        logger.info('CSV file closed.')

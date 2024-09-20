@@ -89,7 +89,7 @@ class DataAcquisitionManager:
         filepath = self.filepath_manager.get_frame_filepath(timestamp)
         meta_data = MetaData(
             session_id=self.session_id,
-            camera_index=self.camera_manager.config.camera_index,
+            camera_index=self.camera_manager.index,
             timestamp=timestamp,
             filepath=filepath
         )
@@ -117,7 +117,7 @@ class DataAcquisitionManager:
             data_writers = [stack.enter_context(wm).get_writer() for wm in self.writer_managers]
 
             # カメラのFPSに基づいてスリープ時間を計算 (秒)
-            fps = self.camera_manager.config.fps
+            fps = self.camera_manager.fps
             sleep_time = 1.0 / fps  # 1フレームの取得に要する時間 (秒)
             next_frame_time = time.time() + sleep_time  # 最初のフレーム取得時間を設定
 
