@@ -20,7 +20,7 @@ image-acquisition/
 │   │
 │   ├── data_acquisition/
 │   │   ├── acquirer_manager.py     # データ取得管理（DataAcquirerクラス、DataAcquirerManagerクラス）
-│   │   └── acquisition_runner.py   # 
+│   │   └── acquisition_runner.py   # データ取得開始関数 (run_acquisition_for_camera関数、run_acquistion_for_multiple_cameras関数)
 │   │
 │   ├── writers/
 │   │   ├── abstract_writer.py      # 抽象クラス（DataWriter, WriterManagerの抽象クラス）
