@@ -38,10 +38,6 @@ class DataAcquisitionManager:
                 traceback.print_exc()  # エラーメッセージを表示
                 raise  # エラーを再度発生させてプログラムを停止させる
 
-    def handle_error(self, e: Exception) -> None:
-        """ エラーハンドリング """
-        logger.error("Error during acquisition: %s", e)
-
     def start_acquisition(self) -> None:
         """ データ取得の開始 """
         with ExitStack() as stack:
@@ -65,7 +61,7 @@ class DataAcquisitionManager:
                         next_frame_time += sleep_time  # 次のフレーム取得時間を更新
 
                     except Exception as e:
-                        self.handle_error(e)
+                        logger.error("Error during acquisition: %s", e)
                         break  # エラー時にループを抜ける
 
             finally:
