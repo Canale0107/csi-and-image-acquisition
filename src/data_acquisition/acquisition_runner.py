@@ -14,10 +14,11 @@ from src.utils import FilePathManager
 logger = logging.getLogger(__name__)
 
 
-def run_acquisition_for_camera(camera_config: CameraConfig,
-                               data_acquisition_config: DataAcquisitionConfig,
-                               influxdb_config: InfluxDBConfig,
-                               session_id: str, stop_event: threading.Event) -> None:
+def run_acquisition_for_camera(
+        camera_config: CameraConfig,
+        data_acquisition_config: DataAcquisitionConfig,
+        influxdb_config: InfluxDBConfig,
+        session_id: str, stop_event: threading.Event) -> None:
     """ カメラごとにデータ取得を行う """
 
     image_dirpath = (
@@ -83,3 +84,34 @@ def run_acquisition_for_camera(camera_config: CameraConfig,
     except Exception as e:
         logger.error("Acquisition error for camera %d: %s", camera_config.camera_index, e)
         raise
+
+def run_acquistion_for_multiple_cameras(
+        data_acquisition_config: DataAcquisitionConfig,
+        session_id: str,
+        camera_configs: List[CameraConfig],
+        influxdb_config: InfluxDBConfig):
+    stop_event = threading.Event()
+    threads = []
+
+    for camera_config in camera_configs:
+        thread = threading.Thread(
+            target=run_acquisition_for_camera,
+            args=(camera_config, data_acquisition_config, influxdb_config, session_id, stop_event)
+        )
+        threads.append(thread)
+
+    for thread in threads:
+        thread.start()
+        logger.info('thread %s started.', thread)
+
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        logger.info("Shutting down all camera acquisitions.")
+        stop_event.set()  # Signal all threads to stop
+
+    for thread in threads:
+        thread.join()
+
+    logger.info("All camera acquisitions have completed.")
