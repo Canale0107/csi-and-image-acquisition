@@ -2,9 +2,8 @@ import io
 import os
 import csv
 import logging
-from pathlib import Path
 
-from src.camera.frame import MetaData
+from src.camera import MetaData
 from src.writers import DataWriter, WriterManager
 from src.utils import FilePathManager
 
@@ -27,7 +26,7 @@ class CSVWriter(DataWriter):
         }
 
         self.writer.writerow(meta_data)
-        logger.info(f'meta_data written to CSV: %s', meta_data)
+        logger.info('meta_data written to CSV: %s', meta_data)
 
 
 class CSVWriterManager(WriterManager):
@@ -60,4 +59,4 @@ class CSVWriterManager(WriterManager):
         if self.file:
             self.file.close()
 
-        logger.info('CSV file closed.')
+        logger.info('CSV file %s closed.', self.filepath)

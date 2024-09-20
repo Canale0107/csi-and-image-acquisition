@@ -27,7 +27,7 @@ class InfluxDBWriter(DataWriter):
                                     .time(meta_data.timestamp, WritePrecision.NS)
         )
         self.write_api.write(bucket=self.bucket, record=point)
-        logger.info("Data written to DB: %s", point)
+        logger.info("Data written to DB: %s", point.to_line_protocol())
 
 
 class InfluxDBWriterManager(WriterManager):

@@ -1,5 +1,4 @@
-from .camera_manager import FrameReader, CameraManager
-from .frame import MetaData, FrameWithMetaData
+from .meta_camera import MetaData, MetaFrame, MetaCamera, MetaCameraManager
 
 
-__all__ = ['FrameReader', 'CameraManager', 'MetaData', 'FrameWithMetaData']
+__all__ = ['MetaCamera', 'MetaCameraManager', 'MetaData', 'MetaFrame']

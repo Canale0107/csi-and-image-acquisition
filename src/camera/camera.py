@@ -1,13 +1,15 @@
-import cv2
 import logging
 
 import numpy as np
+import cv2
 
 from src.config import CameraConfig
 
 logger = logging.getLogger(__name__)
 
-class FrameReader:
+
+# TODO: 抽象的なDataWriterクラスを作って継承させる
+class Camera:
     def __init__(self, cap) -> None:
         self.cap = cap
 
@@ -19,7 +21,7 @@ class FrameReader:
         return frame
 
 
-# CameraとはすなわちFrameReader
+# CameraとはすなわちCamera
 class CameraManager:
     """
     カメラの管理を行う
@@ -54,10 +56,10 @@ class CameraManager:
         logger.info("Camera %s successfully opened.", self.index)
         return self
 
-    def get_reader(self) -> FrameReader:
+    def get_reader(self) -> Camera:
         if self.cap is None:
             raise RuntimeError("Recording not started.")
-        return FrameReader(self.cap)
+        return Camera(self.cap)
 
     def __exit__(self, exc_type, exc_value, traceback) -> None:
         if self.cap is not None:
