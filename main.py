@@ -26,25 +26,19 @@ To stop the acquisition, use Ctrl+C.
 """
 
 import time
-import logging
 import threading
 from datetime import datetime
 
-from src.config import load_configs
-from src.data_acquisition import run_acquisition_for_camera
-
 from yaml import YAMLError
 from pydantic import ValidationError
+from colorama import Fore, Style, init
+
+from src.config import load_configs
+from src.logger import setup_logger
+from src.data_acquisition import run_acquisition_for_camera
 
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler()
-    ]
-)
+logger = setup_logger()
 
 
 def main() -> None:
@@ -74,6 +68,7 @@ def main() -> None:
 
     try:
         data_acquisition_config, camera_configs, influxdb_config = load_configs()
+        logger.info('Succeeded to load all configs.')
 
     except (FileNotFoundError, YAMLError, ValidationError) as e:
         logger.error("Failed to load configs: %s", e)
@@ -92,6 +87,7 @@ def main() -> None:
 
     for thread in threads:
         thread.start()
+        logger.info('thread %s started.', thread)
 
     try:
         while True:
