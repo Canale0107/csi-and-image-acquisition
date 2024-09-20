@@ -27,6 +27,7 @@ class CSVWriter(DataWriter):
         }
 
         self.writer.writerow(meta_data)
+        logger.info(f'meta_data written to CSV: %s', meta_data)
 
 
 class CSVWriterManager(WriterManager):
@@ -38,7 +39,14 @@ class CSVWriterManager(WriterManager):
     def __enter__(self) -> 'CSVWriterManager':
         """ 一度だけCSVファイルをオープン """
         os.makedirs(os.path.dirname(self.filepath), exist_ok=True)
-        self.file = open(self.filepath, mode='w', newline='', encoding='utf-8', buffering=10*1024)
+        try:
+            self.file = open(self.filepath, mode='w', newline='', encoding='utf-8', buffering=10*1024)
+            logger.info('CSV file opened: %s', self.filepath)
+        
+        except Exception:
+            logger.error('Error occuring while opening CSV file.')
+            raise
+        
         return self
 
     def get_writer(self) -> CSVWriter:

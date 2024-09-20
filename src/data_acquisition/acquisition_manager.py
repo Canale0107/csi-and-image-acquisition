@@ -8,12 +8,67 @@ import traceback
 from contextlib import ExitStack
 
 from src.config import DataAcquisitionConfig, CameraConfig, InfluxDBConfig
-from src.camera import CameraManager, FrameWithMetaData, MetaData
+from src.camera import FrameReader, CameraManager, FrameWithMetaData, MetaData
 from src.utils.file_manager import FilePathManager
 from src.writers import DataWriter, WriterManager, CSVWriterManager, InfluxDBWriterManager
 
 
 logger = logging.getLogger(__name__)
+
+'''
+class FrameWithMetaDataReader(FrameReader):
+    def __init__(self, cap, session_id, camera_index, filepath_manager):
+        super().__init__(cap)
+        self.session_id = session_id
+        self.camera_index = camera_index
+        self.filepath_manager = filepath_manager
+
+    def read_frame_with_meta_data(self):
+        meta_data = self._get_meta_data()
+        frame = self.read_frame()
+        return FrameWithMetaData(frame, meta_data)
+
+    def _get_meta_data(self) -> FrameWithMetaData:
+        """ フレームをキャプチャして FrameWithMetaData オブジェクトを返す """
+        timestamp = datetime.now(timezone.utc)
+        filepath = self.filepath_manager.get_frame_filepath(timestamp)
+        meta_data = MetaData(
+            session_id=self.session_id,
+            camera_index=self.camera_index,
+            timestamp=timestamp,
+            filepath=filepath
+        )
+        return meta_data
+
+
+class CameraWithMetaDataManager(CameraManager):
+    def __init__(self, config: DataAcquisitionConfig,
+                 camera_manager: CameraManager,
+                 session_id: str,
+                 camera_index: int,
+                 fps: int,
+                 filepath_manager: FilePathManager) -> None:
+        self.frame_reader = None
+        self.config = config
+        self.camera_manager = camera_manager
+        self.session_id = session_id
+        self.camera_index = camera_index
+        self.fps = fps
+        self.filepath_manager = filepath_manager
+
+    def __enter__(self) -> 'FrameWithMetaDataReaderManager':
+        self.frame_reader = self.camera_manager.get_reader()
+        return self
+    
+    def get_reader(self) -> FrameWithMetaDataReader:
+        if self.frame_reader is None:
+            raise RuntimeError("Recording not started.")
+        return FrameWithMetaDataReader(self.frame_reader, self.session_id, self.camera_index, self.filepath_manager)
+
+    def __exit__(self, exc_type, exc_value, trace_back) -> None:
+        if self.frame_reader is not None:
+            logger.info("Acquisition stopped.")
+'''
 
 
 class DataAcquisitionManager:
@@ -73,7 +128,7 @@ class DataAcquisitionManager:
                         meta_data = self.get_meta_data()
                         logger.info('meta_data: %s', meta_data)
                         frame_with_meta_data = FrameWithMetaData(frame, meta_data)
-                        frame_with_meta_data.save_frame(self.config.data_dirpath)
+                        frame_with_meta_data.save_frame(self.filepath_manager.image_dirpath)
                         self.save_meta_data(frame_with_meta_data, data_writers)
 
                         # 次のフレーム取得までの時間を計算し、必要ならスリープ
