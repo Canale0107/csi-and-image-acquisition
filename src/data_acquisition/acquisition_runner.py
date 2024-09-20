@@ -5,7 +5,7 @@ import threading
 import logging
 
 from src.config import DataAcquisitionConfig, CameraConfig, InfluxDBConfig
-from src.writers import WriterManager, CSVWriterManager, InfluxDBWriterManager
+from src.writers import CSVWriterManager, InfluxDBWriterManager
 from src.camera import MetaCameraManager
 from src.data_acquisition.acquirer_manager import DataAcquirerManager
 from src.utils import FilePathManager
