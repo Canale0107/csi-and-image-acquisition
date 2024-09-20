@@ -50,8 +50,8 @@ class CameraManager:
         logger.info("Setting camera %d FPS to %s.", self.index, self.fps)
 
         if not self.cap.isOpened():
-            logger.error("Failed to open camera %s.", self.index)
-            raise ValueError("Camera %d cannot be opened.", self.index)
+            logger.error("Failed to open camera %d.", self.index)
+            raise ValueError(f"Camera {self.index} cannot be opened.")
 
         logger.info("Camera %s successfully opened.", self.index)
         return self
