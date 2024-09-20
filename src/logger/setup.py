@@ -1,3 +1,5 @@
+import os
+from pathlib import Path
 import logging
 from colorama import Fore, Style, init
 
@@ -31,14 +33,20 @@ class ColoredFormatter(logging.Formatter):
         return f"{log_color}{record.asctime} - {record.name} - {record.levelname} - {record.message}{Style.RESET_ALL}"
 
 # ロガーをセットアップする関数
-def setup_logger():
+def setup_logger(session_id):
     logger = logging.getLogger()
 
-    handler = logging.StreamHandler()
-    formatter = ColoredFormatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    handler.setFormatter(formatter)
+    os.makedirs('logs', exist_ok=True)
+    file_handler = logging.FileHandler(Path('logs') / f'{session_id}.log', mode='a')
+    file_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    file_handler.setFormatter(file_formatter)
+    logger.addHandler(file_handler)
 
-    logger.addHandler(handler)
+    stream_handler = logging.StreamHandler()
+    colored_formatter = ColoredFormatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    stream_handler.setFormatter(colored_formatter)
+    logger.addHandler(stream_handler)
+
     logger.setLevel(logging.INFO)
 
     return logger

@@ -50,7 +50,8 @@ def main() -> None:
 
     session_id = 'session_' + datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    logger = setup_logger()
+    logger = setup_logger(session_id)
+    print(logger.handlers)
 
     try:
         data_acquisition_config, camera_configs, influxdb_config = load_configs()
@@ -60,7 +61,9 @@ def main() -> None:
         logger.error("Failed to load configs: %s", e)
         return
 
-    run_acquistion_for_multiple_cameras(data_acquisition_config, session_id, camera_configs, influxdb_config)
+    run_acquistion_for_multiple_cameras(
+        data_acquisition_config, session_id, camera_configs, influxdb_config
+    )
 
 if __name__ == "__main__":
     main()
