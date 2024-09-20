@@ -12,7 +12,10 @@ logger = logging.getLogger(__name__)
 
 class CSVWriter(DataWriter):
     def __init__(self, file: io.TextIOWrapper) -> None:
-        self.writer = csv.DictWriter(file, fieldnames=['session_id', 'camera_index', 'filepath', 'timestamp'])
+        self.writer = csv.DictWriter(
+            file,
+            fieldnames=['session_id', 'camera_index', 'filepath', 'timestamp']
+        )
         self.writer.writeheader()
 
     def write_data(self, meta_data: MetaData) -> None:
@@ -41,11 +44,11 @@ class CSVWriterManager(WriterManager):
         try:
             self.file = open(self.filepath, mode='w', newline='', encoding='utf-8', buffering=10*1024)
             logger.info('CSV file opened: %s', self.filepath)
-        
+
         except Exception:
             logger.error('Error occuring while opening CSV file.')
             raise
-        
+
         return self
 
     def get_writer(self) -> CSVWriter:
