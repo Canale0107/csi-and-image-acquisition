@@ -14,20 +14,27 @@ image-acquisition/
 │
 ├── src/
 │   ├── camera/
-│   │   ├── camera_manager.py       # カメラの管理（CameraManagerクラス）
-│   │   └── image.py                # 画像の保存やメタデータの管理（MetaDataクラス、MetaFrameクラス）
+│   │   ├── camera.py               # カメラの管理（Cameraクラス、CameraManagerクラス）
+│   │   ├── meta_camera.py          # メタデータ付与機能付きカメラの管理（MetaCameraクラス、MetaCameraManagerクラス）
+│   │   └── meta_frame.py           # メタデータ付き画像の定義（MetaDataクラス、MetaFrameクラス）
 │   │
 │   ├── data_acquisition/
-│   │   ├── acquisition_manager.py  # データ取得管理（DataAcquisitionManagerクラス、run_acquisition_for_camera関数）
-│   │   └── file_manager.py         # ファイルパス管理（FilePathManagerクラス）
+│   │   ├── acquirer_manager.py     # データ取得管理（DataAcquirerクラス、DataAcquirerManagerクラス）
+│   │   └── acquisition_runner.py   # 
 │   │
 │   ├── writers/
 │   │   ├── abstract_writer.py      # 抽象クラス（DataWriter, WriterManagerの抽象クラス）
 │   │   ├── csv_writer.py           # CSVWriter, CSVWriterManagerクラス
-│   │   └── db_writer.py            # InfluxDBWriter, DBManagerクラス
+│   │   └── db_writer.py            # InfluxDBWriter, InfluxDBWriterManagerクラス
 │   │
 │   ├── config/
 │   │   └── config_loader.py        # 設定ファイルの読み込み（load_configs関数）
+│   │
+│   ├── logger/
+│   │   └── setup.py                # ロガーのセットアップ (setup_logger関数)
+│   │
+│   ├── utils/
+│   │   └── file_manager.py         # ファイルパス管理（FilePathManagerクラス）
 │   │
 │   └── requirements.txt            # src内の必要なパッケージのリスト
 │
