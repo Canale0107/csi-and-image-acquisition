@@ -47,13 +47,13 @@ class DataAcquirerManager:
         self.meta_camera = self.meta_camera_manager.__enter__().get_reader()
         self.data_writers = [wm.__enter__().get_writer() for wm in self.writer_managers]
         return self
-    
+
     def get_acquirer(self) -> DataAcquirer:
         if self.meta_camera is None:
             raise RuntimeError("MetaCamera is not ready.")
         if self.data_writers is None:
             raise RuntimeError("DataWriters is not ready.")
-        
+
         return DataAcquirer(self.meta_camera, self.data_writers, self.filepath_manager)
 
     def __exit__(self, exc_type, exc_value, traceback):
