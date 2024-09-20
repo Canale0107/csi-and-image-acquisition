@@ -6,7 +6,7 @@ from pathlib import Path
 
 from src.camera.frame import MetaData
 from src.writers import DataWriter, WriterManager
-
+from src.utils import FilePathManager
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ class CSVWriter(DataWriter):
 
         meta_data = {
             "session_id": str(meta_data.session_id),
-            "camera_index": int(meta_data.camera_index),
+            "camera_index": 'camera'+str(meta_data.camera_index),
             "timestamp": float(meta_data.timestamp.timestamp()),
             "filepath": str(meta_data.filepath)
         }
@@ -30,8 +30,8 @@ class CSVWriter(DataWriter):
 
 
 class CSVWriterManager(WriterManager):
-    def __init__(self, filepath: Path) -> None:
-        self.filepath = filepath
+    def __init__(self, filepath_manager: FilePathManager) -> None:
+        self.filepath = filepath_manager.csv_filepath
         self.file = None
         self.writer = None
 

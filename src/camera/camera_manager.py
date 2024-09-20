@@ -1,8 +1,9 @@
 import cv2
 import logging
 
+import numpy as np
+
 from src.config import CameraConfig
-from src.camera.frame import FrameWithMetaData, MetaData
 
 logger = logging.getLogger(__name__)
 
@@ -10,14 +11,15 @@ class FrameReader:
     def __init__(self, cap) -> None:
         self.cap = cap
 
-    def read_frame(self, meta_data: MetaData) -> FrameWithMetaData:
+    def read_frame(self) -> np.ndarray:
         ret, frame = self.cap.read()
         if not ret:
             raise RuntimeError("Failed to capture frame from camera.")
         frame = cv2.flip(frame, 1)  # 画像の左右反転
-        return FrameWithMetaData(frame, meta_data)
+        return frame
 
 
+# CameraとはすなわちFrameReader
 class CameraManager:
     """
     カメラの管理を行う
