@@ -62,7 +62,7 @@ def main() -> None:
         return
 
     run_acquistion_for_multiple_cameras(
-        data_acquisition_config, session_id, camera_configs, influxdb_config
+        session_id, data_acquisition_config, camera_configs, influxdb_config
     )
 
 if __name__ == "__main__":

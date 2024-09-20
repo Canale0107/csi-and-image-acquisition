@@ -86,8 +86,8 @@ def run_acquisition_for_camera(
         raise
 
 def run_acquistion_for_multiple_cameras(
-        data_acquisition_config: DataAcquisitionConfig,
         session_id: str,
+        data_acquisition_config: DataAcquisitionConfig,
         camera_configs: List[CameraConfig],
         influxdb_config: InfluxDBConfig):
     stop_event = threading.Event()
