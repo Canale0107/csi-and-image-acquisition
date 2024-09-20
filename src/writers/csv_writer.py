@@ -29,7 +29,7 @@ class CSVWriter(DataWriter):
         }
 
         self.writer.writerow(meta_data)
-        logger.info('meta_data written to CSV: %s', meta_data)
+        logger.debug('Meta data written to CSV: %s', meta_data)
 
 
 class CSVWriterManager(WriterManager):

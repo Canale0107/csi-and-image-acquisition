@@ -64,12 +64,24 @@ def run_acquisition_for_camera(
             writer_managers
         )
 
+        frame_count = 0
+        log_interval = 1  # 最初は1フレームごとにログを出力
+        next_log_frame = log_interval
         with acquirer_manager as manager:
             acquirer = manager.get_acquirer()
             try:
+                logger.info("Camera %d: Starting data acquisition. Press Ctrl + C to stop the process.", camera_config.camera_index)
                 while not stop_event.is_set():
                     try:
                         acquirer.acquire_meta_frame()
+                        frame_count += 1
+
+                        # 指定されたフレーム数に達した場合にログを出力
+                        if frame_count >= log_interval:
+                            logger.info("Camera %d: Acquisition in progress: %d frames captured so far.", camera_config.camera_index, frame_count)
+                            
+                            # ログ出力の間隔を指数的に増やす
+                            log_interval *= 2
 
                         time.sleep(max(0, next_frame_time - time.time()))
                         next_frame_time += sleep_time
@@ -79,7 +91,7 @@ def run_acquisition_for_camera(
                         break
 
             finally:
-                logger.info("Acquisition stopped.")
+                logger.info("Camera %d: Acquisition stopped. Total frames captured: %d", camera_config.camera_index, frame_count)
 
     except Exception as e:
         logger.error("Acquisition error for camera %d: %s", camera_config.camera_index, e)
@@ -102,7 +114,7 @@ def run_acquistion_for_multiple_cameras(
 
     for thread in threads:
         thread.start()
-        logger.info('thread %s started.', thread)
+        logger.debug('thread %s started.', thread)
 
     try:
         while True:

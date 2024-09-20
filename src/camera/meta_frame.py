@@ -28,4 +28,4 @@ class MetaFrame:
         # ディレクトリが存在しない場合は作成する
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
         cv2.imwrite(filepath, self.frame)
-        logger.info("Image saved: %s", filepath)
+        logger.debug("Image saved: %s", filepath)
