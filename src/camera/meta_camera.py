@@ -1,38 +1,13 @@
-import os
 from datetime import datetime, timezone
-from pathlib import Path
 import logging
-
-import numpy as np
-import cv2
-from pydantic import BaseModel
 
 from src.config import CameraConfig, DataAcquisitionConfig
 from src.camera.camera import  Camera, CameraManager
+from src.camera.meta_frame import MetaFrame, MetaData
 from src.utils import FilePathManager
 
 
 logger = logging.getLogger(__name__)
-
-
-class MetaData(BaseModel):
-    session_id: str
-    camera_index: int
-    timestamp: datetime
-    filepath: Path
-
-
-class MetaFrame:
-    def __init__(self, frame: np.ndarray, meta_data: MetaData) -> None:
-        self.frame = frame
-        self.meta_data = meta_data
-
-    def save_frame(self, image_save_dirpath: Path) -> None:
-        filepath = Path(image_save_dirpath) / self.meta_data.filepath
-        # ディレクトリが存在しない場合は作成する
-        os.makedirs(os.path.dirname(filepath), exist_ok=True)
-        cv2.imwrite(filepath, self.frame)
-        logger.info("Image saved: %s", filepath)
 
 
 class MetaCamera(Camera):
