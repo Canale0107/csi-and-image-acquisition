@@ -80,14 +80,6 @@ influxdb:
 python3 main.py
 ```
 
-`main.py`の内容：
-```main.py
-from acquisition import Runner
-
-runner = Runnner
-runner.start()
-```
-
 ## 取得されるデータの構造の例
 ```
 session_20240919_212704/
