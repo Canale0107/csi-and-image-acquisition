@@ -3,7 +3,7 @@
 ## 概要
 カメラ（複数台対応）からの画像を保存すると同時に、画像のメタデータ（セッションID、カメラのインデックス、画像のパス、タイムスタンプ）をCSV、InfluxDBに記録する。
 - セッションID：データ取得セッションを表すIDで、`session_%Y%m%d-%H%M%S`(JST)で表される。
-- カメラのインデックス：opencvでカメラを指定するのに用いるインデックス。check_camera.pyで確認できる。
+- カメラのインデックス：opencvでカメラを指定するのに用いるインデックス。`check_camera.py`で確認できる。
 - 画像のパス：以下に示す構造で保存される画像のパス
 - タイムスタンプ：日時(UTC)のタイムスタンプ
 
@@ -80,6 +80,7 @@ influxdb:
 python3 main.py
 ```
 
+`main.py`の内容：
 ```main.py
 from acquisition import Runner
 
