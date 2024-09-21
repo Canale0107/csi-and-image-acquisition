@@ -24,7 +24,7 @@ To run:
 To stop the acquisition, use Ctrl+C.
 """
 
-from src.data_acquisition import AcquisitionRunner
+from src import AcquisitionRunner
 
 
 def main() -> None:
