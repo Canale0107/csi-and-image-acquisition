@@ -20,7 +20,7 @@ image-acquisition/
 │   │
 │   ├── data_acquisition/
 │   │   ├── acquirer_manager.py     # データ取得管理（DataAcquirerクラス、DataAcquirerManagerクラス）
-│   │   └── runner.py               # データ取得実行クラス (Runnerクラス、RunnerManagerクラス)
+│   │   └── runner_manager.py       # データ取得実行クラス (Runnerクラス、RunnerManagerクラス)
 │   │
 │   ├── writers/
 │   │   ├── abstract_writer.py      # 抽象クラス（DataWriter, WriterManagerの抽象クラス）
@@ -33,10 +33,8 @@ image-acquisition/
 │   ├── logger/
 │   │   └── setup.py                # ロガーのセットアップ (setup_logger関数)
 │   │
-│   ├── utils/
-│   │   └── file_manager.py         # ファイルパス管理（FilePathManagerクラス）
-│   │
-│   └── requirements.txt            # src内の必要なパッケージのリスト
+│   └── utils/
+│       └── file_manager.py         # ファイルパス管理（FilePathManagerクラス）
 │
 ├── config.yml                      # 全体の設定ファイル
 ├── main.py                         # エントリーポイントとなるスクリプト
