@@ -23,14 +23,8 @@ To run:
 
 To stop the acquisition, use Ctrl+C.
 """
-from datetime import datetime
 
-from yaml import YAMLError
-from pydantic import ValidationError
-
-from src.logger import setup_logger
-from src.config import load_configs
-from src.data_acquisition import run_acquistion_for_multiple_cameras
+from src.data_acquisition import AcquisitionRunner
 
 
 def main() -> None:
@@ -48,22 +42,8 @@ def main() -> None:
             python3 main.py
     """
 
-    session_id = 'session_' + datetime.now().strftime("%Y%m%d_%H%M%S")
-
-    logger = setup_logger(session_id)
-
-    try:
-        config = load_configs()
-        logger.info('Succeeded to load all configs.')
-
-    except (FileNotFoundError, YAMLError, ValidationError) as e:
-        logger.error("Failed to load configs: %s", e)
-        return
-
-    run_acquistion_for_multiple_cameras(
-        session_id,
-        config
-    )
+    runner = AcquisitionRunner()
+    runner.start()
 
 if __name__ == "__main__":
     main()

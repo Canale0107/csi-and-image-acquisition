@@ -35,10 +35,10 @@ class InfluxDBConfig(BaseModel):
         return InfluxDBClient(url=self.url, token=self.token, org=self.org)
 
 
-def load_configs() -> Tuple[DataAcquisitionConfig, CameraConfig, InfluxDBConfig]:
+def load_configs(config_path: str) -> Tuple[DataAcquisitionConfig, CameraConfig, InfluxDBConfig]:
     try:
         logger.info("Loading configuration file: config.yml")
-        with open("config.yml", "r", encoding='utf-8') as file:
+        with open(config_path, "r", encoding='utf-8') as file:
             config = yaml.safe_load(file)
 
         logger.info("Parsing data acquisition configuration.")
