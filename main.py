@@ -11,13 +11,6 @@ Main functionalities:
 - Handle graceful shutdown via a stop event when interrupted by the user (Ctrl+C).
 - Log important events and errors during the execution process.
 
-Modules used:
-- `yaml`: For parsing YAML configuration files.
-- `pydantic`: For validating configuration files.
-- `src.config`: For loading YAML configuration files (camera settings, data acquisition settings, InfluxDB credentials).
-- `src.data_acquisition`: For managing the acquisition process for each camera.
-- `src.logger`: For logging information, errors, and events.
-
 To run:
     python3 main.py
 
@@ -30,16 +23,6 @@ from acquisition import Runner
 def main() -> None:
     """
     Main function that coordinates the image acquisition process across multiple cameras.
-
-    Steps:
-    1. Load configurations for data acquisition, cameras, and InfluxDB from YAML files.
-       - Handles errors in case configuration files are missing or invalid.
-    2. Generate a unique session ID based on the current timestamp.
-    3. Start acquisition and allow the user to interrupt the process with Ctrl+C.
-
-    Usage:
-        Call this function directly to start the image acquisition process:
-            python3 main.py
     """
 
     runner = Runner()
