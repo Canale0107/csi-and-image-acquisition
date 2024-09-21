@@ -19,8 +19,7 @@ To stop the acquisition, use Ctrl+C.
 from datetime import datetime
 import logging
 
-from acquisition.logger import setup_logger
-from acquisition import Runner
+from acquisition import Runner, setup_logger
 
 def get_session_id() -> str:
     session_id = 'session_' + datetime.now().strftime("%Y%m%d_%H%M%S")

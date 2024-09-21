@@ -1,3 +1,6 @@
-from .data_acquisition import Runner
+import logging
 
-__all__ = ['Runner']
+from .data_acquisition import Runner
+from .logger import setup_logger
+
+__all__ = ['Runner', 'setup_logger']
