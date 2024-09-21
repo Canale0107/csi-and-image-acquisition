@@ -33,7 +33,7 @@ class ColoredFormatter(logging.Formatter):
         return f"{log_color}{record.asctime} - {record.name} - {record.levelname} - {record.message}{Style.RESET_ALL}"
 
 # ロガーをセットアップする関数
-def setup_logger(session_id):
+def setup_logger(session_id, log_level=logging.INFO):
     logger = logging.getLogger()
 
     os.makedirs('logs', exist_ok=True)
@@ -47,7 +47,7 @@ def setup_logger(session_id):
     stream_handler.setFormatter(colored_formatter)
     logger.addHandler(stream_handler)
 
-    logger.setLevel(logging.INFO)
+    logger.setLevel(log_level)
 
     return logger
 

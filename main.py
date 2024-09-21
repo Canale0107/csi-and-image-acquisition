@@ -16,8 +16,15 @@ To run:
 
 To stop the acquisition, use Ctrl+C.
 """
+from datetime import datetime
+import logging
 
+from acquisition.logger import setup_logger
 from acquisition import Runner
+
+def get_session_id() -> str:
+    session_id = 'session_' + datetime.now().strftime("%Y%m%d_%H%M%S")
+    return session_id
 
 
 def main() -> None:
@@ -25,7 +32,10 @@ def main() -> None:
     Main function that coordinates the image acquisition process across multiple cameras.
     """
 
-    runner = Runner()
+    session_id = get_session_id()
+    log_level = logging.INFO
+    setup_logger(session_id, log_level)
+    runner = Runner(session_id)
     runner.start()
 
 if __name__ == "__main__":

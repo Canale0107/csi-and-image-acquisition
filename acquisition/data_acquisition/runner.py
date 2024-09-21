@@ -1,5 +1,4 @@
 import time
-from datetime import datetime
 from pathlib import Path
 from typing import List
 import threading
@@ -9,7 +8,6 @@ from yaml import YAMLError
 from pydantic import ValidationError
 
 from acquisition.config import DataAcquisitionConfig, CameraConfig, InfluxDBConfig, load_configs
-from acquisition.logger import setup_logger
 from acquisition.writers import CSVWriterManager, InfluxDBWriterManager
 from acquisition.camera import MetaCameraManager
 from acquisition.data_acquisition.acquirer_manager import DataAcquirerManager
@@ -19,15 +17,11 @@ logger = logging.getLogger(__name__)
 
 
 class Runner:
-    def __init__(self, config_path: str = "config.yml"):
+    def __init__(self, session_id: str, config_path: str = "config.yml"):
+        self.session_id = session_id
+        logger.info("Initializing Runner with session_id: %s", self.session_id)
         self.config = self._load_config(config_path)
-        self.session_id = self._get_session_id()
-        setup_logger(self.session_id)
-
-    def _get_session_id(self) -> str:
-        session_id = 'session_' + datetime.now().strftime("%Y%m%d_%H%M%S")
-        logger.info("session_id: %s", session_id)
-        return session_id
+        logger.info("Runner initialized successfully.")
 
     def _load_config(self, config_path: Path) -> dict:
         try:
@@ -42,8 +36,10 @@ class Runner:
         return config
 
     def start(self):
+        logger.info("Runner starting...")
         manager = RunnerManager(self.session_id, self.config)
         manager.run_for_multiple_cameras()
+        logger.info("Runner has finished execution.")
 
 
 class RunnerManager:
@@ -61,17 +57,12 @@ class RunnerManager:
 
         # Create threads for each camera
         for camera_config in self.config['cameras']:
-            thread = threading.Thread(
-                target=self._run_for_camera,
-                args=(camera_config,)
-            )
+            thread = threading.Thread(target=self._run_for_camera,args=(camera_config,))
             self.threads.append(thread)
 
         # Start all threads:
         self._start_threads()
-
         self._monitor_threads()
-
         logger.info("All camera acquisitions have completed.")
     
     def _start_threads(self):
