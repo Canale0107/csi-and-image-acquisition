@@ -1,1 +1,3 @@
-from .data_acquisition import AcquisitionRunner
+from .data_acquisition import Runner
+
+__all__ = ['Runner']

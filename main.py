@@ -24,7 +24,7 @@ To run:
 To stop the acquisition, use Ctrl+C.
 """
 
-from src import AcquisitionRunner
+from src import Runner
 
 
 def main() -> None:
@@ -42,7 +42,7 @@ def main() -> None:
             python3 main.py
     """
 
-    runner = AcquisitionRunner()
+    runner = Runner()
     runner.start()
 
 if __name__ == "__main__":

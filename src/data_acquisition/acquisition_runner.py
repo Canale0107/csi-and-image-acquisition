@@ -18,7 +18,7 @@ from src.utils import FilePathManager
 logger = logging.getLogger(__name__)
 
 
-class AcquisitionRunner:
+class Runner:
     def __init__(self, config_path: str = "config.yml"):
         self.config = self._load_config(config_path)
         self.session_id = self._get_session_id()

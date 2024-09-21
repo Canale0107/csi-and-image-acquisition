@@ -1,4 +1,4 @@
-from .acquisition_runner import AcquisitionRunner
+from .acquisition_runner import Runner
 __all__ = [
-    'AcquisitionRunner', 
+    'Runner', 
 ]
