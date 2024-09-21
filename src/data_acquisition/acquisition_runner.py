@@ -42,11 +42,11 @@ class AcquisitionRunner:
         return config
 
     def start(self):
-        manager = AcquisitionManager(self.session_id, self.config)
+        manager = RunnerManager(self.session_id, self.config)
         manager.run_acquistion_for_multiple_cameras()
 
 
-class AcquisitionManager:
+class RunnerManager:
     def __init__(self, session_id: str, config: dict):
         self.session_id = session_id
         self.config = config
@@ -57,7 +57,7 @@ class AcquisitionManager:
         for camera_config in self.config['cameras']:
             thread = threading.Thread(
                 target=self.run_acquisition_for_camera,
-                args=(camera_config, self.config['data_acquisition'], self.config['writers'])
+                args=(camera_config,)
             )
             self.threads.append(thread)
 
@@ -80,12 +80,9 @@ class AcquisitionManager:
             thread.join()
         logger.info("All camera acquisitions have completed.")
 
-    def run_acquisition_for_camera(
-        self,
-        camera_config: CameraConfig,
-        data_acquisition_config: DataAcquisitionConfig,
-        writers_config: Dict) -> None:
-        """ カメラごとにデータ取得を行う """
+    def managers_setup(self, camera_config: CameraConfig):
+        data_acquisition_config = self.config['data_acquisition']
+        writers_config = self.config['writers']
 
         image_dirpath = (
             Path(data_acquisition_config.data_dirpath)
@@ -117,17 +114,30 @@ class AcquisitionManager:
 
         writer_managers = [manager for manager, enabled in writer_managers_and_flags if enabled]
 
+        return {
+            'filepath': filepath_manager,
+            'meta_camera': meta_camera_manager,
+            'writers': writer_managers
+        }
+
+    def run_acquisition_for_camera(
+        self,
+        camera_config: CameraConfig) -> None:
+        """ カメラごとにデータ取得を行う """
+
+        managers = self.managers_setup(camera_config)
+
         try:
-            fps = meta_camera_manager.fps
+            fps = managers['meta_camera'].fps
             sleep_time = 1.0 / fps
             next_frame_time = time.time() + sleep_time
 
             acquirer_manager = DataAcquirerManager(
                 DataAcquisitionConfig,
                 self.session_id,
-                filepath_manager,
-                meta_camera_manager,
-                writer_managers
+                managers['filepath'],
+                managers['meta_camera'],
+                managers['writers']
             )
 
             frame_count = 0
@@ -162,3 +172,4 @@ class AcquisitionManager:
         except Exception as e:
             logger.error("Acquisition error for camera %d: %s", camera_config.camera_index, e)
             raise
+    
