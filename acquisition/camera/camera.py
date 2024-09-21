@@ -3,7 +3,7 @@ import logging
 import numpy as np
 import cv2
 
-from src.config import CameraConfig
+from acquisition.config import CameraConfig
 
 logger = logging.getLogger(__name__)
 

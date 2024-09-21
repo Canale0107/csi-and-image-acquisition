@@ -12,7 +12,7 @@ Classes:
 """
 
 from abc import ABC, abstractmethod
-from src.camera import MetaData
+from acquisition.camera import MetaData
 
 
 class DataWriter(ABC):

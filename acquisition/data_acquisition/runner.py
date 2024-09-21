@@ -8,12 +8,12 @@ import logging
 from yaml import YAMLError
 from pydantic import ValidationError
 
-from src.config import DataAcquisitionConfig, CameraConfig, InfluxDBConfig, load_configs
-from src.logger import setup_logger
-from src.writers import CSVWriterManager, InfluxDBWriterManager
-from src.camera import MetaCameraManager
-from src.data_acquisition.acquirer_manager import DataAcquirerManager
-from src.utils import FilePathManager
+from acquisition.config import DataAcquisitionConfig, CameraConfig, InfluxDBConfig, load_configs
+from acquisition.logger import setup_logger
+from acquisition.writers import CSVWriterManager, InfluxDBWriterManager
+from acquisition.camera import MetaCameraManager
+from acquisition.data_acquisition.acquirer_manager import DataAcquirerManager
+from acquisition.utils import FilePathManager
 
 logger = logging.getLogger(__name__)
 

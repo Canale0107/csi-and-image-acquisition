@@ -1,10 +1,10 @@
 from typing import List
 import logging
 
-from src.config import DataAcquisitionConfig
-from src.camera import MetaCameraManager, MetaCamera
-from src.utils.file_manager import FilePathManager
-from src.writers import DataWriter, WriterManager
+from acquisition.config import DataAcquisitionConfig
+from acquisition.camera import MetaCameraManager, MetaCamera
+from acquisition.utils.file_manager import FilePathManager
+from acquisition.writers import DataWriter, WriterManager
 
 
 logger = logging.getLogger(__name__)

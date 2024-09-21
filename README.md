@@ -12,7 +12,7 @@
 ```
 image-acquisition/
 │
-├── src/
+├── acquisition/
 │   ├── camera/
 │   │   ├── camera.py               # カメラの管理（Cameraクラス、CameraManagerクラス）
 │   │   ├── meta_camera.py          # メタデータ付与機能付きカメラの管理（MetaCameraクラス、MetaCameraManagerクラス）
@@ -20,7 +20,7 @@ image-acquisition/
 │   │
 │   ├── data_acquisition/
 │   │   ├── acquirer_manager.py     # データ取得管理（DataAcquirerクラス、DataAcquirerManagerクラス）
-│   │   └── acquisition_runner.py   # データ取得開始関数 (run_acquisition_for_camera関数、run_acquistion_for_multiple_cameras関数)
+│   │   └── runner.py   # データ取得開始関数 (run_acquisition_for_camera関数、run_acquistion_for_multiple_cameras関数)
 │   │
 │   ├── writers/
 │   │   ├── abstract_writer.py      # 抽象クラス（DataWriter, WriterManagerの抽象クラス）
@@ -78,6 +78,13 @@ influxdb:
 以下のコマンドを実行すると、画像データの取得が始まる。
 ```
 python3 main.py
+```
+
+```main.py
+from acquisition import Runner
+
+runner = Runnner
+runner.start()
 ```
 
 ## 取得されるデータの構造の例

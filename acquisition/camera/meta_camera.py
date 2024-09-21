@@ -1,10 +1,10 @@
 from datetime import datetime, timezone
 import logging
 
-from src.config import CameraConfig, DataAcquisitionConfig
-from src.camera.camera import  Camera, CameraManager
-from src.camera.meta_frame import MetaFrame, MetaData
-from src.utils import FilePathManager
+from acquisition.config import CameraConfig, DataAcquisitionConfig
+from acquisition.camera.camera import  Camera, CameraManager
+from acquisition.camera.meta_frame import MetaFrame, MetaData
+from acquisition.utils import FilePathManager
 
 
 logger = logging.getLogger(__name__)
