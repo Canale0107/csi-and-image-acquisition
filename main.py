@@ -51,10 +51,9 @@ def main() -> None:
     session_id = 'session_' + datetime.now().strftime("%Y%m%d_%H%M%S")
 
     logger = setup_logger(session_id)
-    print(logger.handlers)
 
     try:
-        data_acquisition_config, camera_configs, influxdb_config = load_configs()
+        config = load_configs()
         logger.info('Succeeded to load all configs.')
 
     except (FileNotFoundError, YAMLError, ValidationError) as e:
@@ -62,7 +61,8 @@ def main() -> None:
         return
 
     run_acquistion_for_multiple_cameras(
-        session_id, data_acquisition_config, camera_configs, influxdb_config
+        session_id,
+        config
     )
 
 if __name__ == "__main__":

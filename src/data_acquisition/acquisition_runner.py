@@ -1,6 +1,6 @@
 import time
 from pathlib import Path
-from typing import List
+from typing import List, Dict
 import threading
 import logging
 
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 def run_acquisition_for_camera(
         camera_config: CameraConfig,
         data_acquisition_config: DataAcquisitionConfig,
-        influxdb_config: InfluxDBConfig,
+        writers_config: Dict,
         session_id: str, stop_event: threading.Event) -> None:
     """ カメラごとにデータ取得を行う """
 
@@ -46,7 +46,7 @@ def run_acquisition_for_camera(
     # マネージャーの初期化
     writer_managers_and_flags = [
         (CSVWriterManager(filepath_manager), data_acquisition_config.save_to_csv),
-        (InfluxDBWriterManager(influxdb_config), data_acquisition_config.send_to_db)
+        (InfluxDBWriterManager(writers_config['influxdb']), data_acquisition_config.send_to_db)
     ]
 
     writer_managers = [manager for manager, enabled in writer_managers_and_flags if enabled]
@@ -66,7 +66,7 @@ def run_acquisition_for_camera(
 
         frame_count = 0
         log_interval = 1  # 最初は1フレームごとにログを出力
-        next_log_frame = log_interval
+        max_log_interval = 1024
         with acquirer_manager as manager:
             acquirer = manager.get_acquirer()
             try:
@@ -81,7 +81,7 @@ def run_acquisition_for_camera(
                             logger.info("Camera %d: Acquisition in progress: %d frames captured so far.", camera_config.camera_index, frame_count)
                             
                             # ログ出力の間隔を指数的に増やす
-                            log_interval *= 2
+                            log_interval = min(log_interval*2, max_log_interval)
 
                         time.sleep(max(0, next_frame_time - time.time()))
                         next_frame_time += sleep_time
@@ -97,18 +97,22 @@ def run_acquisition_for_camera(
         logger.error("Acquisition error for camera %d: %s", camera_config.camera_index, e)
         raise
 
+def cleanup_acquisition(threads, stop_event):
+    stop_event.set()
+    for thread in threads:
+        thread.join()
+    logger.info("All camera acquisitions have completed.")
+
 def run_acquistion_for_multiple_cameras(
         session_id: str,
-        data_acquisition_config: DataAcquisitionConfig,
-        camera_configs: List[CameraConfig],
-        influxdb_config: InfluxDBConfig):
+        config: Dict):
     stop_event = threading.Event()
     threads = []
 
-    for camera_config in camera_configs:
+    for camera_config in config['cameras']:
         thread = threading.Thread(
             target=run_acquisition_for_camera,
-            args=(camera_config, data_acquisition_config, influxdb_config, session_id, stop_event)
+            args=(camera_config, config['data_acquisition'], config['writers'], session_id, stop_event)
         )
         threads.append(thread)
 
@@ -121,9 +125,6 @@ def run_acquistion_for_multiple_cameras(
             time.sleep(1)
     except KeyboardInterrupt:
         logger.info("Shutting down all camera acquisitions.")
-        stop_event.set()  # Signal all threads to stop
-
-    for thread in threads:
-        thread.join()
+        cleanup_acquisition(threads, stop_event)
 
     logger.info("All camera acquisitions have completed.")

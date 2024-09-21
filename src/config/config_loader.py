@@ -68,4 +68,10 @@ def load_configs() -> Tuple[DataAcquisitionConfig, CameraConfig, InfluxDBConfig]
         logger.error("Configuration validation error: %s", e)
         raise
 
-    return data_acquisition_config, camera_configs, influxdb_config
+    return {
+        'data_acquisition': data_acquisition_config,
+        'cameras': camera_configs,
+        'writers': {
+            'influxdb': influxdb_config
+        }
+    }
