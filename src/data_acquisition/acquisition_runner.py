@@ -1,7 +1,7 @@
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import List, Dict
+from typing import List
 import threading
 import logging
 
@@ -43,7 +43,7 @@ class AcquisitionRunner:
 
     def start(self):
         manager = RunnerManager(self.session_id, self.config)
-        manager.run_acquistion_for_multiple_cameras()
+        manager.run_for_multiple_cameras()
 
 
 class RunnerManager:
@@ -53,18 +53,33 @@ class RunnerManager:
         self.stop_event = threading.Event()
         self.threads = []
 
-    def run_acquistion_for_multiple_cameras(self):
+    def run_for_multiple_cameras(self):
+        camera_configs = self.config.get('cameras', [])
+        if not camera_configs:
+            logger.error("No camera configurations found.")
+            return
+
+        # Create threads for each camera
         for camera_config in self.config['cameras']:
             thread = threading.Thread(
-                target=self.run_acquisition_for_camera,
+                target=self._run_for_camera,
                 args=(camera_config,)
             )
             self.threads.append(thread)
 
+        # Start all threads:
+        self._start_threads()
+
+        self._monitor_threads()
+
+        logger.info("All camera acquisitions have completed.")
+    
+    def _start_threads(self):
         for thread in self.threads:
             thread.start()
             logger.debug('thread %s started.', thread)
 
+    def _monitor_threads(self):
         try:
             while True:
                 time.sleep(1)
@@ -78,9 +93,9 @@ class RunnerManager:
         self.stop_event.set()
         for thread in self.threads:
             thread.join()
-        logger.info("All camera acquisitions have completed.")
+        logger.info("All threads have been joined.")
 
-    def managers_setup(self, camera_config: CameraConfig):
+    def _setup_managers(self, camera_config: CameraConfig):
         data_acquisition_config = self.config['data_acquisition']
         writers_config = self.config['writers']
 
@@ -99,6 +114,7 @@ class RunnerManager:
 
         filepath_manager = FilePathManager(image_dirpath, csv_filepath)
 
+        # Meta Camera manager setup
         meta_camera_manager = MetaCameraManager(
             data_acquisition_config,
             camera_config,
@@ -106,7 +122,7 @@ class RunnerManager:
             filepath_manager
         )
 
-        # マネージャーの初期化
+        # Writer managers setup
         writer_managers_and_flags = [
             (CSVWriterManager(filepath_manager), data_acquisition_config.save_to_csv),
             (InfluxDBWriterManager(writers_config['influxdb']), data_acquisition_config.send_to_db)
@@ -120,18 +136,14 @@ class RunnerManager:
             'writers': writer_managers
         }
 
-    def run_acquisition_for_camera(
+    def _run_for_camera(
         self,
         camera_config: CameraConfig) -> None:
         """ カメラごとにデータ取得を行う """
 
-        managers = self.managers_setup(camera_config)
+        managers = self._setup_managers(camera_config)
 
         try:
-            fps = managers['meta_camera'].fps
-            sleep_time = 1.0 / fps
-            next_frame_time = time.time() + sleep_time
-
             acquirer_manager = DataAcquirerManager(
                 DataAcquisitionConfig,
                 self.session_id,
@@ -140,36 +152,41 @@ class RunnerManager:
                 managers['writers']
             )
 
-            frame_count = 0
-            log_interval = 1  # 最初は1フレームごとにログを出力
-            max_log_interval = 1024
-            with acquirer_manager as manager:
-                acquirer = manager.get_acquirer()
-                try:
-                    logger.info("Camera %d: Starting data acquisition. Press Ctrl + C to stop the process.", camera_config.camera_index)
-                    while not self.stop_event.is_set():
-                        try:
-                            acquirer.acquire_meta_frame()
-                            frame_count += 1
-
-                            # 指定されたフレーム数に達した場合にログを出力
-                            if frame_count >= log_interval:
-                                logger.info("Camera %d: Acquisition in progress: %d frames captured so far.", camera_config.camera_index, frame_count)
-                                
-                                # ログ出力の間隔を指数的に増やす
-                                log_interval = min(log_interval*2, max_log_interval)
-
-                            time.sleep(max(0, next_frame_time - time.time()))
-                            next_frame_time += sleep_time
-
-                        except Exception as e:
-                            logger.error("Error during acquisition: %s", e)
-                            break
-
-                finally:
-                    logger.info("Camera %d: Acquisition stopped. Total frames captured: %d", camera_config.camera_index, frame_count)
+            self._acquire_data(acquirer_manager, camera_config)
 
         except Exception as e:
             logger.error("Acquisition error for camera %d: %s", camera_config.camera_index, e)
             raise
-    
+
+    def _acquire_data(self, acquirer_manager, camera_config):
+        fps = camera_config.fps
+        sleep_time = 1.0 / fps
+        next_frame_time = time.time() + sleep_time
+        frame_count = 0
+        log_interval = 1  # 最初は1フレームごとにログを出力
+        max_log_interval = 1024
+        with acquirer_manager as manager:
+            acquirer = manager.get_acquirer()
+            try:
+                logger.info("Camera %d: Starting data acquisition. Press Ctrl + C to stop the process.", camera_config.camera_index)
+                while not self.stop_event.is_set():
+                    try:
+                        acquirer.acquire_meta_frame()
+                        frame_count += 1
+
+                        # 指定されたフレーム数に達した場合にログを出力
+                        if frame_count >= log_interval:
+                            logger.info("Camera %d: Acquisition in progress: %d frames captured so far.", camera_config.camera_index, frame_count)
+                            
+                            # ログ出力の間隔を指数的に増やす
+                            log_interval = min(log_interval*2, max_log_interval)
+
+                        time.sleep(max(0, next_frame_time - time.time()))
+                        next_frame_time += sleep_time
+
+                    except Exception as e:
+                        logger.error("Error during acquisition: %s", e)
+                        break
+
+            finally:
+                logger.info("Camera %d: Acquisition stopped. Total frames captured: %d", camera_config.camera_index, frame_count)
