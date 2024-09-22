@@ -18,7 +18,7 @@ image-acquisition/
 │   │   ├── meta_camera.py          # メタデータ付与機能付きカメラの管理（MetaCameraクラス、MetaCameraManagerクラス）
 │   │   └── meta_frame.py           # メタデータ付き画像の定義（MetaDataクラス、MetaFrameクラス）
 │   │
-│   ├── data_acquisition/
+│   ├── main/
 │   │   ├── acquirer_manager.py     # データ取得管理（ImageAcquirerクラス、ImageAcquirerManagerクラス）
 │   │   └── runner_manager.py       # データ取得実行クラス (Runnerクラス、RunnerManagerクラス)
 │   │
