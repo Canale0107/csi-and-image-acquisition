@@ -47,9 +47,9 @@ def load_configs(config_path: str) -> Config:
         with open(config_path, "r", encoding='utf-8') as file:
             config = yaml.safe_load(file)
 
-        logger.info("Parsing data acquisition configuration.")
+        logger.info("Parsing image acquisition configuration.")
         image_acquisition_config = ImageAcquisitionConfig.parse_obj(config['image_acquisition'])
-        logger.info("Data acquisition config: %s", image_acquisition_config.dict())
+        logger.info("Image acquisition config: %s", image_acquisition_config.dict())
 
         logger.info("Parsing camera configurations.")
         camera_configs = [CameraConfig.parse_obj(cam_config) for cam_config in config['camera']]
