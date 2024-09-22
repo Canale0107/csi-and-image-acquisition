@@ -7,7 +7,7 @@ import logging
 from yaml import YAMLError
 from pydantic import ValidationError
 
-from image_acquisition.config import ImageAcquisitionConfig, CameraConfig, InfluxDBConfig, load_configs
+from image_acquisition.config import ImageAcquisitionConfig, CameraConfig, InfluxDBConfig, Config, load_configs
 from image_acquisition.writers import CSVWriterManager, InfluxDBWriterManager
 from image_acquisition.camera import MetaCameraManager
 from image_acquisition.main.acquirer_manager import ImageAcquirerManager
@@ -43,7 +43,7 @@ class Runner:
 
 
 class RunnerManager:
-    def __init__(self, session_id: str, config: dict):
+    def __init__(self, session_id: str, config: Config):
         self.session_id = session_id
         self.config = config
         self.stop_event = threading.Event()
