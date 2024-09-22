@@ -1,7 +1,7 @@
 from typing import List
 import logging
 
-from image_acquisition.config import DataAcquisitionConfig
+from image_acquisition.config import ImageAcquisitionConfig
 from image_acquisition.camera import MetaCameraManager, MetaCamera
 from image_acquisition.utils.file_manager import FilePathManager
 from image_acquisition.writers import DataWriter, WriterManager
@@ -32,7 +32,7 @@ class ImageAcquirer:
 
 
 class ImageAcquirerManager:
-    def __init__(self, config: DataAcquisitionConfig, 
+    def __init__(self, config: ImageAcquisitionConfig, 
                  session_id: str,
                  filepath_manager: FilePathManager,
                  meta_camera_manager: MetaCameraManager,

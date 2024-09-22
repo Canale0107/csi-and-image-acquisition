@@ -1,4 +1,4 @@
-from .config_loader import DataAcquisitionConfig, CameraConfig, InfluxDBConfig, load_configs
+from .config_loader import ImageAcquisitionConfig, CameraConfig, InfluxDBConfig, load_configs
 
 
-__all__ = ['DataAcquisitionConfig', 'CameraConfig', 'InfluxDBConfig', 'load_configs']
+__all__ = ['ImageAcquisitionConfig', 'CameraConfig', 'InfluxDBConfig', 'load_configs']

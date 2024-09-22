@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 import logging
 
-from image_acquisition.config import CameraConfig, DataAcquisitionConfig
+from image_acquisition.config import CameraConfig, ImageAcquisitionConfig
 from image_acquisition.camera.camera import  Camera, CameraManager
 from image_acquisition.camera.meta_frame import MetaFrame, MetaData
 from image_acquisition.utils import FilePathManager
@@ -36,7 +36,7 @@ class MetaCamera(Camera):
 
 
 class MetaCameraManager(CameraManager):
-    def __init__(self, config: DataAcquisitionConfig,
+    def __init__(self, config: ImageAcquisitionConfig,
                  camera_config: CameraConfig,
                  session_id: str,
                  filepath_manager: FilePathManager) -> None:

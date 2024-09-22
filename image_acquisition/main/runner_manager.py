@@ -7,7 +7,7 @@ import logging
 from yaml import YAMLError
 from pydantic import ValidationError
 
-from image_acquisition.config import DataAcquisitionConfig, CameraConfig, InfluxDBConfig, load_configs
+from image_acquisition.config import ImageAcquisitionConfig, CameraConfig, InfluxDBConfig, load_configs
 from image_acquisition.writers import CSVWriterManager, InfluxDBWriterManager
 from image_acquisition.camera import MetaCameraManager
 from image_acquisition.main.acquirer_manager import ImageAcquirerManager
@@ -136,7 +136,7 @@ class RunnerManager:
 
         try:
             acquirer_manager = ImageAcquirerManager(
-                DataAcquisitionConfig,
+                ImageAcquisitionConfig,
                 self.session_id,
                 managers['filepath'],
                 managers['meta_camera'],

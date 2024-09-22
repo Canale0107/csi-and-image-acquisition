@@ -9,7 +9,7 @@ from influxdb_client import InfluxDBClient
 logger = logging.getLogger(__name__)
 
 
-class DataAcquisitionConfig(BaseModel):
+class ImageAcquisitionConfig(BaseModel):
     data_dirpath: str
     save_to_csv: bool
     send_to_db: bool
@@ -35,14 +35,14 @@ class InfluxDBConfig(BaseModel):
         return InfluxDBClient(url=self.url, token=self.token, org=self.org)
 
 
-def load_configs(config_path: str) -> Tuple[DataAcquisitionConfig, CameraConfig, InfluxDBConfig]:
+def load_configs(config_path: str) -> Tuple[ImageAcquisitionConfig, CameraConfig, InfluxDBConfig]:
     try:
         logger.info("Loading configuration file: config.yml")
         with open(config_path, "r", encoding='utf-8') as file:
             config = yaml.safe_load(file)
 
         logger.info("Parsing data acquisition configuration.")
-        image_acquisition_config = DataAcquisitionConfig.parse_obj(config['image_acquisition'])
+        image_acquisition_config = ImageAcquisitionConfig.parse_obj(config['image_acquisition'])
         logger.info("Data acquisition config: %s", image_acquisition_config.dict())
 
         logger.info("Parsing camera configurations.")
