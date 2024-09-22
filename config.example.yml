@@ -1,4 +1,4 @@
-data_acquisition:
+image_acquisition:
   data_dirpath: './data'
   save_to_csv: true
   send_to_db: true

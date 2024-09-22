@@ -87,17 +87,17 @@ class RunnerManager:
         logger.info("All threads have been joined.")
 
     def _setup_managers(self, camera_config: CameraConfig):
-        data_acquisition_config = self.config['data_acquisition']
+        image_acquisition_config = self.config['image_acquisition']
         writers_config = self.config['writers']
 
         image_dirpath = (
-            Path(data_acquisition_config.data_dirpath)
+            Path(image_acquisition_config.data_dirpath)
             / self.session_id
             / f'camera{camera_config.camera_index}'
         )
 
         csv_filepath = (
-            Path(data_acquisition_config.data_dirpath)
+            Path(image_acquisition_config.data_dirpath)
             / self.session_id
             / f'camera{camera_config.camera_index}'
             / 'meta_data.csv'
@@ -107,7 +107,7 @@ class RunnerManager:
 
         # Meta Camera manager setup
         meta_camera_manager = MetaCameraManager(
-            data_acquisition_config,
+            image_acquisition_config,
             camera_config,
             self.session_id,
             filepath_manager
@@ -115,8 +115,8 @@ class RunnerManager:
 
         # Writer managers setup
         writer_managers_and_flags = [
-            (CSVWriterManager(filepath_manager), data_acquisition_config.save_to_csv),
-            (InfluxDBWriterManager(writers_config['influxdb']), data_acquisition_config.send_to_db)
+            (CSVWriterManager(filepath_manager), image_acquisition_config.save_to_csv),
+            (InfluxDBWriterManager(writers_config['influxdb']), image_acquisition_config.send_to_db)
         ]
 
         writer_managers = [manager for manager, enabled in writer_managers_and_flags if enabled]

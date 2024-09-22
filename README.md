@@ -46,7 +46,7 @@ image-acquisition/
 `config.example.yml`を元に`config.yml`を作成する
 ```config.yml
 # データ取得前半の設定
-data_acquisition:
+image_acquisition:
   data_dirpath: './data' # 取得されたデータを保存するディレクトリのパス
   save_to_csv: true # trueにすると画像のメタデータをCSVに保存する
   send_to_db: true # trueにすると画像のメタデータをInfluxDBに送信する

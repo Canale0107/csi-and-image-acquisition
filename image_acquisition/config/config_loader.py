@@ -42,8 +42,8 @@ def load_configs(config_path: str) -> Tuple[DataAcquisitionConfig, CameraConfig,
             config = yaml.safe_load(file)
 
         logger.info("Parsing data acquisition configuration.")
-        data_acquisition_config = DataAcquisitionConfig.parse_obj(config['data_acquisition'])
-        logger.info("Data acquisition config: %s", data_acquisition_config.dict())
+        image_acquisition_config = DataAcquisitionConfig.parse_obj(config['image_acquisition'])
+        logger.info("Data acquisition config: %s", image_acquisition_config.dict())
 
         logger.info("Parsing camera configurations.")
         camera_configs = [CameraConfig.parse_obj(cam_config) for cam_config in config['camera']]
@@ -69,7 +69,7 @@ def load_configs(config_path: str) -> Tuple[DataAcquisitionConfig, CameraConfig,
         raise
 
     return {
-        'data_acquisition': data_acquisition_config,
+        'image_acquisition': image_acquisition_config,
         'cameras': camera_configs,
         'writers': {
             'influxdb': influxdb_config
