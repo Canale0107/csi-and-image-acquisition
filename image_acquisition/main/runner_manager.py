@@ -23,9 +23,8 @@ class Runner:
         self.config = self._load_config(config_path)
         logger.info("Runner initialized successfully.")
 
-    def _load_config(self, config_path: Path) -> dict:
+    def _load_config(self, config_path: str) -> Config:
         try:
-            config_path = "config.yml"
             config = load_configs(config_path)
             logger.info('Succeeded to load all configs.')
 
