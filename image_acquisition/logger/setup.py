@@ -50,15 +50,3 @@ def setup_logger(session_id, log_level=logging.INFO):
     logger.setLevel(log_level)
 
     return logger
-
-def setup_shared_logger():
-    shared_logger = logging.getLogger('shared_logger')
-
-    shared_handler = logging.StreamHandler()
-    formatter = ColoredFormatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    shared_handler.setFormatter(formatter)
-
-    shared_logger.addHandler(shared_handler)
-    shared_logger.setLevel(logging.INFO)
-
-    return shared_logger
