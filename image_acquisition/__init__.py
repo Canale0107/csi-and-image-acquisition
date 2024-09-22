@@ -1,5 +1,3 @@
-import logging
-
 from .main import Runner
 from .logger import setup_logger
 
