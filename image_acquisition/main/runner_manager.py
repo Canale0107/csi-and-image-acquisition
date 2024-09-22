@@ -50,13 +50,13 @@ class RunnerManager:
         self.threads = []
 
     def run_for_multiple_cameras(self):
-        camera_configs = self.config.get('cameras', [])
+        camera_configs = self.config.cameras
         if not camera_configs:
             logger.error("No camera configurations found.")
             return
 
         # Create threads for each camera
-        for camera_config in self.config['cameras']:
+        for camera_config in self.config.cameras:
             thread = threading.Thread(target=self._run_for_camera,args=(camera_config,))
             self.threads.append(thread)
 
@@ -87,8 +87,8 @@ class RunnerManager:
         logger.info("All threads have been joined.")
 
     def _setup_managers(self, camera_config: CameraConfig):
-        image_acquisition_config = self.config['image_acquisition']
-        writers_config = self.config['writers']
+        image_acquisition_config = self.config.image_acquisition
+        writers_config = self.config.writers
 
         image_dirpath = (
             Path(image_acquisition_config.data_dirpath)

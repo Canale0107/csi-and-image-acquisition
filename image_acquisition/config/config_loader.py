@@ -1,5 +1,5 @@
 import yaml
-from typing import Tuple
+from typing import List, Dict
 import logging
 
 from pydantic import BaseModel, ValidationError
@@ -35,7 +35,13 @@ class InfluxDBConfig(BaseModel):
         return InfluxDBClient(url=self.url, token=self.token, org=self.org)
 
 
-def load_configs(config_path: str) -> Tuple[ImageAcquisitionConfig, CameraConfig, InfluxDBConfig]:
+class Config(BaseModel):
+    image_acquisition: ImageAcquisitionConfig
+    cameras: List[CameraConfig]
+    writers: Dict[str, BaseModel]
+
+
+def load_configs(config_path: str) -> Config:
     try:
         logger.info("Loading configuration file: config.yml")
         with open(config_path, "r", encoding='utf-8') as file:
@@ -68,10 +74,10 @@ def load_configs(config_path: str) -> Tuple[ImageAcquisitionConfig, CameraConfig
         logger.error("Configuration validation error: %s", e)
         raise
 
-    return {
-        'image_acquisition': image_acquisition_config,
-        'cameras': camera_configs,
-        'writers': {
+    return Config(
+        image_acquisition = image_acquisition_config,
+        cameras = camera_configs,
+        writers = {
             'influxdb': influxdb_config
         }
-    }
+    )
