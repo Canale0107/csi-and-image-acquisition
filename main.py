@@ -19,7 +19,7 @@ To stop the acquisition, use Ctrl+C.
 from datetime import datetime
 import logging
 
-from acquisition import Runner, setup_logger
+import image_acquisition
 
 def get_session_id() -> str:
     session_id = 'session_' + datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -33,8 +33,8 @@ def main() -> None:
 
     session_id = get_session_id()
     log_level = logging.INFO
-    setup_logger(session_id, log_level)
-    runner = Runner(session_id)
+    image_acquisition.setup_logger(session_id, log_level)
+    runner = image_acquisition.Runner(session_id)
     runner.start()
 
 if __name__ == "__main__":

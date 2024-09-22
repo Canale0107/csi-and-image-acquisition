@@ -1,16 +1,16 @@
 from typing import List
 import logging
 
-from acquisition.config import DataAcquisitionConfig
-from acquisition.camera import MetaCameraManager, MetaCamera
-from acquisition.utils.file_manager import FilePathManager
-from acquisition.writers import DataWriter, WriterManager
+from image_acquisition.config import DataAcquisitionConfig
+from image_acquisition.camera import MetaCameraManager, MetaCamera
+from image_acquisition.utils.file_manager import FilePathManager
+from image_acquisition.writers import DataWriter, WriterManager
 
 
 logger = logging.getLogger(__name__)
 
 
-class DataAcquirer:
+class ImageAcquirer:
     def __init__(self, meta_camera: MetaCamera, 
                  data_writers: List[DataWriter], 
                  filepath_manager: FilePathManager):
@@ -31,7 +31,7 @@ class DataAcquirer:
                 raise  # エラーを再度発生させてプログラムを停止させる
 
 
-class DataAcquirerManager:
+class ImageAcquirerManager:
     def __init__(self, config: DataAcquisitionConfig, 
                  session_id: str,
                  filepath_manager: FilePathManager,
@@ -51,13 +51,13 @@ class DataAcquirerManager:
         self.data_writers = [wm.__enter__().get_writer() for wm in self.writer_managers]
         return self
 
-    def get_acquirer(self) -> DataAcquirer:
+    def get_acquirer(self) -> ImageAcquirer:
         if self.meta_camera is None:
             raise RuntimeError("MetaCamera is not ready.")
         if self.data_writers is None:
             raise RuntimeError("DataWriters is not ready.")
 
-        return DataAcquirer(self.meta_camera, self.data_writers, self.filepath_manager)
+        return ImageAcquirer(self.meta_camera, self.data_writers, self.filepath_manager)
 
     def __exit__(self, exc_type, exc_value, traceback):
         # リソースの解放やログの処理

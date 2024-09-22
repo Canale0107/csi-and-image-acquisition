@@ -19,7 +19,7 @@ image-acquisition/
 │   │   └── meta_frame.py           # メタデータ付き画像の定義（MetaDataクラス、MetaFrameクラス）
 │   │
 │   ├── data_acquisition/
-│   │   ├── acquirer_manager.py     # データ取得管理（DataAcquirerクラス、DataAcquirerManagerクラス）
+│   │   ├── acquirer_manager.py     # データ取得管理（ImageAcquirerクラス、ImageAcquirerManagerクラス）
 │   │   └── runner_manager.py       # データ取得実行クラス (Runnerクラス、RunnerManagerクラス)
 │   │
 │   ├── writers/

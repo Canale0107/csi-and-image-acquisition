@@ -7,11 +7,11 @@ import logging
 from yaml import YAMLError
 from pydantic import ValidationError
 
-from acquisition.config import DataAcquisitionConfig, CameraConfig, InfluxDBConfig, load_configs
-from acquisition.writers import CSVWriterManager, InfluxDBWriterManager
-from acquisition.camera import MetaCameraManager
-from acquisition.data_acquisition.acquirer_manager import DataAcquirerManager
-from acquisition.utils import FilePathManager
+from image_acquisition.config import DataAcquisitionConfig, CameraConfig, InfluxDBConfig, load_configs
+from image_acquisition.writers import CSVWriterManager, InfluxDBWriterManager
+from image_acquisition.camera import MetaCameraManager
+from image_acquisition.main.acquirer_manager import ImageAcquirerManager
+from image_acquisition.utils import FilePathManager
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +64,7 @@ class RunnerManager:
         self._start_threads()
         self._monitor_threads()
         logger.info("All camera acquisitions have completed.")
-    
+
     def _start_threads(self):
         for thread in self.threads:
             thread.start()
@@ -135,7 +135,7 @@ class RunnerManager:
         managers = self._setup_managers(camera_config)
 
         try:
-            acquirer_manager = DataAcquirerManager(
+            acquirer_manager = ImageAcquirerManager(
                 DataAcquisitionConfig,
                 self.session_id,
                 managers['filepath'],

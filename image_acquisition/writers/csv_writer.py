@@ -3,9 +3,9 @@ import os
 import csv
 import logging
 
-from acquisition.camera import MetaData
-from acquisition.writers import DataWriter, WriterManager
-from acquisition.utils import FilePathManager
+from image_acquisition.camera import MetaData
+from image_acquisition.writers import DataWriter, WriterManager
+from image_acquisition.utils import FilePathManager
 
 logger = logging.getLogger(__name__)
 

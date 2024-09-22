@@ -3,9 +3,9 @@ import logging
 
 from influxdb_client import Point, WritePrecision, WriteApi
 
-from acquisition.config import InfluxDBConfig
-from acquisition.camera import MetaData
-from acquisition.writers import DataWriter, WriterManager
+from image_acquisition.config import InfluxDBConfig
+from image_acquisition.camera import MetaData
+from image_acquisition.writers import DataWriter, WriterManager
 
 logger = logging.getLogger(__name__)
 
