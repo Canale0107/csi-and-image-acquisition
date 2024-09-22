@@ -154,8 +154,7 @@ class RunnerManager:
         sleep_time = 1.0 / fps
         next_frame_time = time.time() + sleep_time
         frame_count = 0
-        log_interval = 1  # 最初は1フレームごとにログを出力
-        max_log_interval = 1024
+        next_log_frame = 1  # 最初にログを出力するフレーム
         with acquirer_manager as manager:
             acquirer = manager.get_acquirer()
             try:
@@ -166,11 +165,16 @@ class RunnerManager:
                         frame_count += 1
 
                         # 指定されたフレーム数に達した場合にログを出力
-                        if frame_count >= log_interval:
+                        if frame_count >= next_log_frame:
                             logger.info("Camera %d: Acquisition in progress: %d frames captured so far.", camera_config.camera_index, frame_count)
                             
-                            # ログ出力の間隔を指数的に増やす
-                            log_interval = min(log_interval*2, max_log_interval)
+                            # 次にログを出力するフレーム数の更新
+                            if frame_count < 10:
+                                next_log_frame += 1  # 1フレームごとにログ出力
+                            elif frame_count < 100:
+                                next_log_frame += 10  # 10フレームごとにログ出力
+                            else:
+                                next_log_frame += 100  # 100フレームごとにログ出力
 
                         time.sleep(max(0, next_frame_time - time.time()))
                         next_frame_time += sleep_time
