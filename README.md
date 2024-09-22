@@ -12,7 +12,7 @@
 ```
 image-acquisition/
 │
-├── acquisition/
+├── image_acquisition/
 │   ├── camera/
 │   │   ├── camera.py               # カメラの管理（Cameraクラス、CameraManagerクラス）
 │   │   ├── meta_camera.py          # メタデータ付与機能付きカメラの管理（MetaCameraクラス、MetaCameraManagerクラス）
@@ -33,13 +33,12 @@ image-acquisition/
 │   ├── logger/
 │   │   └── setup.py                # ロガーのセットアップ (setup_logger関数)
 │   │
-│   └── utils/
-│       └── file_manager.py         # ファイルパス管理（FilePathManagerクラス）
+│   ├── utils/
+│   │   └── file_manager.py         # ファイルパス管理（FilePathManagerクラス）
+│   └── requirements.txt            # image_acquisitionに必要なパッケージのリスト
 │
 ├── config.yml                      # 全体の設定ファイル
-├── main.py                         # エントリーポイントとなるスクリプト
-└── requirements.txt                # プロジェクト全体で必要なパッケージのリスト
-
+└── main.py                         # エントリーポイントとなるスクリプト
 ```
 
 ## 設定方法
