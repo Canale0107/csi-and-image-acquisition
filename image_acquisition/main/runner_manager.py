@@ -135,7 +135,6 @@ class RunnerManager:
 
         try:
             acquirer_manager = ImageAcquirerManager(
-                ImageAcquisitionConfig,
                 self.session_id,
                 managers['filepath'],
                 managers['meta_camera'],

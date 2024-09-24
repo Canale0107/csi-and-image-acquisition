@@ -32,12 +32,10 @@ class ImageAcquirer:
 
 
 class ImageAcquirerManager:
-    def __init__(self, config: ImageAcquisitionConfig, 
-                 session_id: str,
+    def __init__(self, session_id: str,
                  filepath_manager: FilePathManager,
                  meta_camera_manager: MetaCameraManager,
                  writer_managers: List[WriterManager]) -> None:
-        self.config = config
         self.session_id = session_id
         self.filepath_manager = filepath_manager
         self.meta_camera_manager = meta_camera_manager
