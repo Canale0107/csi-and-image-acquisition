@@ -21,6 +21,7 @@ class Runner:
         self.session_id = session_id
         logger.info("Initializing Runner with session_id: %s", self.session_id)
         self.config = self._load_config(config_path)
+        self.manager = None
         logger.info("Runner initialized successfully.")
 
     def _load_config(self, config_path: str) -> Config:
@@ -36,9 +37,16 @@ class Runner:
 
     def start(self):
         logger.info("Runner starting...")
-        manager = RunnerManager(self.session_id, self.config)
-        manager.run_for_multiple_cameras()
-        logger.info("Runner has finished execution.")
+        self.manager = RunnerManager(self.session_id, self.config)
+        self.manager.run_for_multiple_cameras()
+    
+    def stop(self):
+        if self.manager:
+            logger.info("Stopping Runner...")
+            self.manager.cleanup_acquisition()  # Managerを通じてカメラ停止処理を実行
+            logger.info("Runner stopped successfully.")
+        else:
+            logger.warning("Runner has not been started yet or manager is missing.")
 
 
 class RunnerManager:
@@ -61,23 +69,11 @@ class RunnerManager:
 
         # Start all threads:
         self._start_threads()
-        self._monitor_threads()
-        logger.info("All camera acquisitions have completed.")
 
     def _start_threads(self):
         for thread in self.threads:
             thread.start()
             logger.debug('thread %s started.', thread)
-
-    def _monitor_threads(self):
-        try:
-            while True:
-                time.sleep(1)
-        except KeyboardInterrupt:
-            logger.info("Shutting down all camera acquisitions.")
-            self.cleanup_acquisition()
-
-        logger.info("All camera acquisitions have completed.")
 
     def cleanup_acquisition(self):
         self.stop_event.set()
@@ -152,6 +148,9 @@ class RunnerManager:
         sleep_time = 1.0 / fps
         next_frame_time = time.time() + sleep_time
         frame_count = 0
+        frames_in_last_second = 0
+        start_time = time.time()
+        
         with acquirer_manager as manager:
             acquirer = manager.get_acquirer()
             try:
@@ -160,12 +159,20 @@ class RunnerManager:
                     try:
                         acquirer.acquire_meta_frame()
                         frame_count += 1
+                        frames_in_last_second += 1
 
-                        # 指定されたフレーム数に達した場合にログを出力
-                        if frame_count % fps == 0:
-                            logger.info("Camera %d: Acquisition in progress: %d frames captured so far.", camera_config.camera_index, frame_count)
+                        current_time = time.time()
+                        
+                        # 1秒経過ごとにフレーム数とFPSをログ出力
+                        if current_time - start_time >= 1.0:
+                            logger.info("Camera %d: Acquisition in progress: %d frames captured so far. Current FPS: %.2f", 
+                                        camera_config.camera_index, frame_count, frames_in_last_second / (current_time - start_time))
+                            
+                            # タイミングと1秒間のフレーム数をリセット
+                            start_time = current_time
+                            frames_in_last_second = 0
 
-                        time.sleep(max(0, next_frame_time - time.time()))
+                        time.sleep(max(0, next_frame_time - current_time))
                         next_frame_time += sleep_time
 
                     except Exception as e:

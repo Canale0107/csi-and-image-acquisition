@@ -18,6 +18,7 @@ To stop the acquisition, use Ctrl+C.
 """
 from datetime import datetime
 import logging
+import time
 
 import image_acquisition
 
@@ -34,8 +35,19 @@ def main() -> None:
     session_id = get_session_id()
     log_level = logging.INFO
     image_acquisition.setup_logger(session_id, log_level)
-    runner = image_acquisition.Runner(session_id)
-    runner.start()
+    image_acquisition_runner = image_acquisition.Runner(session_id)
+    
+    try:
+        logging.info('start acquisition')
+        image_acquisition_runner.start()
+
+        while True:
+            time.sleep(1)
+
+    except KeyboardInterrupt:
+        # Ctrl+Cで停止された場合に終了処理を行う
+        logging.info("Keyboard interrupt received. Stopping the Runner...")
+        image_acquisition_runner.stop()
 
 if __name__ == "__main__":
     main()
