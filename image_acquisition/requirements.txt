@@ -1,6 +1,5 @@
-pyyaml
+pyYAML==6.0.2
 pydantic>=2.0
-numpy
-opencv-python
-influxdb-client
-colorama
+opencv-python==4.10.0.84
+influxdb-client==1.46.0
+colorama==0.4.6
