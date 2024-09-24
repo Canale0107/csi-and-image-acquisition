@@ -36,8 +36,9 @@ class ColoredFormatter(logging.Formatter):
 def setup_logger(session_id, log_level=logging.INFO):
     logger = logging.getLogger()
 
-    os.makedirs('logs', exist_ok=True)
-    file_handler = logging.FileHandler(Path('logs') / f'{session_id}.log', mode='a')
+    log_dirpath = Path('logs') / session_id
+    os.makedirs(log_dirpath, exist_ok=True)
+    file_handler = logging.FileHandler(log_dirpath / 'image_acquisition.log', mode='a')
     file_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     file_handler.setFormatter(file_formatter)
     logger.addHandler(file_handler)
