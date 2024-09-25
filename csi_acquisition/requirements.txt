@@ -1,0 +1,6 @@
+pyserial==3.5
+pyYAML==6.0.2
+pydantic>=2.0
+influxdb-client==1.46.0
+numpy==2.0.1
+colorama==0.4.6
