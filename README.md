@@ -1,4 +1,4 @@
-# Data Acquisition
+# CSI and Image Acquisition
 
 画像データとCSIデータを同時に取得し、CSV、InfluxDBなどに書き込むプログラム
 
