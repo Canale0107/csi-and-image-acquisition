@@ -10,7 +10,7 @@ from csi_acquisition.csi.meta_csi_data import MetaCsiData, meta_csi_data_index
 logger =  logging.getLogger(__name__)
 
 
-NO_DATA_SLEEP_DURATION = 0.5
+NO_DATA_SLEEP_DURATION = 1
 
 
 class SerialReader:

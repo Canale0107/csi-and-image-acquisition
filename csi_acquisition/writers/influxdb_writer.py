@@ -72,7 +72,6 @@ class InfluxDBWriter(DataWriter):
             "channel": meta_csi_data.channel,
             "secondary_channel": meta_csi_data.secondary_channel,
             "ant": ant_dict[meta_csi_data.ant],
-            "sig_len": meta_csi_data.sig_len,
             "rx_state": meta_csi_data.rx_state
         }
     
@@ -96,6 +95,7 @@ class InfluxDBWriter(DataWriter):
         aggregation = meta_csi_data.aggregation
         ampdu_cnt = meta_csi_data.ampdu_cnt
         sgi = meta_csi_data.sgi
+        sig_len = meta_csi_data.sig_len
         noise_floor = meta_csi_data.noise_floor
         csi_data = meta_csi_data.csi_data
         timestamp = meta_csi_data.timestamp
@@ -106,6 +106,7 @@ class InfluxDBWriter(DataWriter):
         points.append(self.create_point("Aggregation", "aggregation", aggregation, common_tags, timestamp))
         points.append(self.create_point("AMPDU Count", "ampdu_count", ampdu_cnt, common_tags, timestamp))
         points.append(self.create_point("SGI", "sgi", sgi, common_tags, timestamp))
+        points.append(self.create_point("SIG_LEN", "sig_len", sig_len, common_tags, timestamp))
         points.append(self.create_point("Noise Floor", "noise_floor", noise_floor, common_tags, timestamp))
 
         if csi_data and len(csi_data) == CSI_DATA_LENGTH:
