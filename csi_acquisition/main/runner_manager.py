@@ -90,34 +90,39 @@ class RunnerManager:
         frame_count = 0
         frames_in_last_second = 0
         start_time = time.time()
-        with acquirer_manager as manager:
-            acquirer = manager.get_acquirer()
 
-            try:
-                logger.info("Starting data acquisition. Press Ctrl + C to stop the process.")
-                last_data_time = time.time()
+        self.is_running = True
+        while self.is_running:
+            with acquirer_manager as manager:
+                acquirer = manager.get_acquirer()
 
-                self.is_running = True
-                while self.is_running:
-                    try:
-                        if acquirer.acquirer_meta_csi_data(last_data_time):
-                            frame_count += 1
-                            frames_in_last_second += 1
-                            last_data_time = time.time()
+                try:
+                    logger.info("Starting data acquisition. Press Ctrl + C to stop the process.")
+                    last_data_time = time.time()
 
-                        if last_data_time - start_time >= 1.0:
-                            logger.info('CSI Acquisition in progress: %d frames captured so far. Current FPS: %.2f',
-                                        frame_count, frames_in_last_second / (last_data_time - start_time))
-                            # タイミングと1秒間のフレーム数をリセット
-                            start_time = last_data_time
-                            frames_in_last_second = 0
+                    while self.is_running:
+                        try:
+                            if acquirer.acquirer_meta_csi_data(last_data_time):
+                                frame_count += 1
+                                frames_in_last_second += 1
+                                last_data_time = time.time()
 
-                        time.sleep(0.001)
+                            if last_data_time - start_time >= 1.0:
+                                logger.info('CSI Acquisition in progress: %d frames captured so far. Current FPS: %.2f',
+                                            frame_count, frames_in_last_second / (last_data_time - start_time))
+                                # タイミングと1秒間のフレーム数をリセット
+                                start_time = last_data_time
+                                frames_in_last_second = 0
 
-                    
-                    except Exception as e:
-                        logger.error("Error during acquisition: %s", e)
-                        raise
+                            time.sleep(0.001)
 
-            finally:
-                logger.info("Acquisition stopped. Total frames captured: %d", frame_count)
+                        except TimeoutError:
+                            logger.info("Timeout, attempting to reconnect.")
+                            break
+                        
+                        except Exception as e:
+                            logger.error("Error during acquisition: %s", e)
+                            raise
+
+                finally:
+                    logger.info("Acquisition stopped. Total frames captured: %d", frame_count)

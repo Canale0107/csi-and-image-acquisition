@@ -59,6 +59,7 @@ class ColoredCsiFormatter(logging.Formatter):
         return f"{log_color}{record.asctime} - {record.name} - {record.levelname} - {record.message}{Style.RESET_ALL}"
 
 def setup_logging(session_id, log_level=logging.INFO):
+    setup_root_logging(log_level)
     setup_csi_logging(session_id, log_level)
     setup_image_logging(session_id, log_level)
 

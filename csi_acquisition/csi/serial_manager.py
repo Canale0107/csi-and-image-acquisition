@@ -25,7 +25,7 @@ class SerialReader:
             logger.debug("Read line: %s", line)
             return line
         except UnicodeDecodeError as e:
-            logger.warning("Failed to decode line: %s", e)
+            logger.debug("Failed to decode line: %s", e)
             return None
         
     def read_valid_line(self):
@@ -35,7 +35,7 @@ class SerialReader:
                 if self.is_valid_line(line):
                     logger.debug("Valid line read: %s", line)
                     return line
-                logger.warning("Invalid line: %s", line)
+                logger.debug("Invalid line: %s", line)
         return None
     
     def _handle_no_data(self, last_data_time):
@@ -43,6 +43,7 @@ class SerialReader:
         if time.time() - last_data_time > self.no_data_timeout:
             logger.warning("No data timeout")
             time.sleep(self.no_data_sleep_duration)
+            raise TimeoutError("No data received within the specified timeout period.")
     
     def read_meta_csi_data(self, last_data_time):
         line = self.read_valid_line()

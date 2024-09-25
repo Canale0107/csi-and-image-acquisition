@@ -8,16 +8,23 @@ class CsiAcquirer:
         self.data_writers = data_writers
 
     def acquirer_meta_csi_data(self, last_data_time):
-        meta_csi_data = self.serial_reader.read_meta_csi_data(last_data_time)
+        try:
+            meta_csi_data = self.serial_reader.read_meta_csi_data(last_data_time)
+        except TimeoutError as e:
+            logger.error("Timeout while reading CSI data: %s", e)
+            raise e
 
         if meta_csi_data:
+            all_success = True
             for data_writer in self.data_writers:
                 try:
                     data_writer.write_data(meta_csi_data)
                 except Exception as e:
                     logger.error("Failed to write data: %s", e)
-                    raise  # エラーを再度発生させてプログラムを停止させる
-            return True
+                    all_success = False
+                    # continue  # 他の data_writer の処理を続けたい場合
+                    raise  # 一つの失敗で停止したい場合はこちら
+            return all_success  # 全て成功したかどうかを返す
         else:
             return False
 
