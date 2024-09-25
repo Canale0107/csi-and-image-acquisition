@@ -41,10 +41,8 @@ class SerialReader:
     def _handle_no_data(self, last_data_time):
         logger.debug("No data read from serial port.")
         if time.time() - last_data_time > self.no_data_timeout:
-            logger.warning("No data timeout, attempting to reconnect...")
-            self.serial_connection.close()  # 一旦シリアルポートを閉じる
-            self.serial_connection.reconnect()  # 再接続を試みる
-            time.sleep(self.no_data_sleep_duration)  # 再接続後スリープして再試行
+            logger.warning("No data timeout")
+            time.sleep(self.no_data_sleep_duration)
     
     def read_meta_csi_data(self, last_data_time):
         line = self.read_valid_line()
