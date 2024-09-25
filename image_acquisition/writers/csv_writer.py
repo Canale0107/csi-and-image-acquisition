@@ -14,7 +14,7 @@ class CSVWriter(DataWriter):
     def __init__(self, file: io.TextIOWrapper) -> None:
         self.writer = csv.DictWriter(
             file,
-            fieldnames=['session_id', 'camera_index', 'filepath', 'timestamp']
+            fieldnames=['filepath', 'timestamp']
         )
         self.writer.writeheader()
 
@@ -22,8 +22,6 @@ class CSVWriter(DataWriter):
         """ CSVにデータを書き込む """
 
         meta_data = {
-            "session_id": str(meta_data.session_id),
-            "camera_index": 'camera'+str(meta_data.camera_index),
             "timestamp": float(meta_data.timestamp.timestamp()),
             "filepath": str(meta_data.filepath)
         }
