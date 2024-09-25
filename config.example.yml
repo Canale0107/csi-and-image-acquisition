@@ -1,3 +1,22 @@
+csi_acquisition:
+  data_dirpath: './data'
+  save_to_csv: true
+  send_to_db: true
+  send_via_udp: false
+
+csi:
+  serial_port: '/dev/cu.usbserial-0001'
+  baud_rate: 1500000
+  timeout: 0.5
+  no_data_timeout: 0.5
+
+udp:
+  receiver_ips_ports:
+  - ip: '127.0.0.1'
+    port: 5005
+  #  - ip: '127.0.0.1'
+  #    port: 5006
+
 image_acquisition:
   data_dirpath: './data'
   save_to_csv: true
@@ -5,10 +24,6 @@ image_acquisition:
 
 camera:
   - camera_index: 0
-    width: 320
-    height: 240
-    fps: 30
-  - camera_index: 1
     width: 320
     height: 240
     fps: 30
